@@ -5,13 +5,17 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Shield, CreditCard, Lock, CheckCircle, ArrowLeft, AlertCircle } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
+
+declare global {
+  interface Window {
+    Razorpay: any
+  }
+}
 
 export default function PaymentPage() {
   const { user } = useAuth()
@@ -32,63 +36,143 @@ export default function PaymentPage() {
 
   const planDetails = {
     standard: {
-      name: "Standard",
-      price: 9.99,
+      name: "Professional",
+      price: 19.99,
+      priceInr: 19.99 * 83, // Convert to INR
       period: "month",
-      features: ["1 GB upload limit", "20 encryptions/day", "Priority support", "Encryption history"],
+      features: [
+        "File upload limit: 1 GB per file",
+        "Daily encryption limit: 50 files",
+        "Daily decryption limit: 50 files",
+        "Priority support",
+        "Encryption analytics",
+        "API access"
+      ],
     },
     professional: {
-      name: "Professional",
-      price: 29.99,
+      name: "Enterprise",
+      price: 89.99,
+      priceInr: 89.99 * 83, // Convert to INR
       period: "month",
-      features: ["3 GB upload limit", "50 encryptions/day", "24/7 support", "Advanced analytics", "API access"],
+      features: [
+        "File upload limit: 10 GB per file",
+        "Daily encryption limit: Unlimited",
+        "Daily decryption limit: Unlimited",
+        "24/7 support",
+        "Advanced analytics",
+        "Custom integrations",
+        "Compliance reporting"
+      ],
     },
   }
 
   const currentPlan = selectedPlan ? planDetails[selectedPlan as keyof typeof planDetails] : null
 
-  const handlePayment = async (formData: FormData) => {
+  const loadRazorpayScript = () => {
+    return new Promise((resolve, reject) => {
+      if (window.Razorpay) {
+        resolve(window.Razorpay)
+        return
+      }
+      const script = document.createElement("script")
+      script.src = "https://checkout.razorpay.com/v1/checkout.js"
+      script.onload = () => resolve(window.Razorpay)
+      script.onerror = () => reject(new Error("Failed to load Razorpay"))
+      document.body.appendChild(script)
+    })
+  }
+
+  const handlePayment = async () => {
     setIsLoading(true)
     setError("")
 
     try {
-      const cardNumber = formData.get("cardNumber") as string
-      const expiryDate = formData.get("expiryDate") as string
-      const cvv = formData.get("cvv") as string
-      const cardName = formData.get("cardName") as string
+      console.log("Starting payment process for plan:", selectedPlan)
+      
+      // Load Razorpay script
+      await loadRazorpayScript()
 
-      if (!cardNumber || !expiryDate || !cvv || !cardName) {
-        setError("Please fill in all payment details")
-        return
-      }
-
-      // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // In a real implementation, you would integrate with Stripe, PayPal, etc.
-      // For now, we'll simulate a successful payment
-      const response = await fetch("/api/payment/process", {
+      // Create order on server
+      const orderResponse = await fetch("/api/payment/razorpay/create-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           plan: selectedPlan,
-          email: email,
+          email: email || user?.email,
           amount: currentPlan?.price,
-          cardNumber: cardNumber.slice(-4), // Only send last 4 digits
         }),
       })
 
-      if (response.ok) {
-        setPaymentSuccess(true)
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 3000)
-      } else {
-        throw new Error("Payment processing failed")
+      if (!orderResponse.ok) {
+        const errorData = await orderResponse.json()
+        console.error("Order creation failed:", errorData)
+        throw new Error(errorData.error || "Failed to create payment order")
       }
+
+      const orderData = await orderResponse.json()
+      console.log("Order created successfully:", orderData)
+
+      // Initialize Razorpay payment
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_d3VIQj77iWUG8r",
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Zephyrn Securities",
+        description: `${currentPlan?.name} Plan - ${currentPlan?.period} (₹${currentPlan?.priceInr.toLocaleString()})`,
+        order_id: orderData.orderId,
+        handler: async function (response: any) {
+          try {
+            console.log("Payment completed, verifying...")
+            // Verify payment on server
+            const verifyResponse = await fetch("/api/payment/razorpay/verify", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            })
+
+            if (verifyResponse.ok) {
+              console.log("Payment verified successfully")
+              setPaymentSuccess(true)
+              setTimeout(() => {
+                router.push("/dashboard")
+              }, 3000)
+            } else {
+              throw new Error("Payment verification failed")
+            }
+          } catch (err: any) {
+            console.error("Payment verification error:", err)
+            setError(err.message || "Payment verification failed")
+          }
+        },
+        prefill: {
+          email: email || user?.email,
+        },
+        theme: {
+          color: "#000000",
+          backdrop_color: "#000000",
+          hide_topbar: false,
+        },
+        modal: {
+          ondismiss: function() {
+            console.log("Payment modal dismissed")
+            setIsLoading(false)
+          }
+        }
+      }
+
+      console.log("Opening Razorpay checkout with options:", options)
+      const razorpay = new window.Razorpay(options)
+      razorpay.open()
     } catch (err: any) {
+      console.error("Payment error:", err)
       setError(err.message || "Payment failed. Please try again.")
     } finally {
       setIsLoading(false)
@@ -97,15 +181,15 @@ export default function PaymentPage() {
 
   if (!currentPlan) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-        <Card className="bg-black/20 border-slate-700 backdrop-blur-sm max-w-md">
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+        <Card className="bg-black/20 border-white/10 backdrop-blur-sm max-w-md">
           <CardHeader>
             <CardTitle className="text-white">Invalid Plan</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-slate-300 mb-4">Please select a valid plan to continue.</p>
+            <p className="text-white/60 mb-4">Please select a valid plan to continue.</p>
             <Link href="/pricing">
-              <Button className="w-full">View Pricing Plans</Button>
+              <Button className="w-full bg-white text-black hover:bg-white/90">View Pricing Plans</Button>
             </Link>
           </CardContent>
         </Card>
@@ -115,33 +199,33 @@ export default function PaymentPage() {
 
   if (paymentSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <Card className="bg-black/20 border-slate-700 backdrop-blur-sm max-w-md text-center">
+          <Card className="bg-black/20 border-white/10 backdrop-blur-sm max-w-md text-center">
             <CardHeader>
               <div className="flex justify-center mb-4">
-                <div className="p-3 bg-green-900/30 rounded-full">
-                  <CheckCircle className="h-12 w-12 text-green-400" />
+                <div className="p-3 bg-white/10 rounded-full">
+                  <CheckCircle className="h-12 w-12 text-white" />
                 </div>
               </div>
               <CardTitle className="text-white text-2xl">Payment Successful!</CardTitle>
-              <CardDescription className="text-slate-300">
+              <CardDescription className="text-white/60">
                 Welcome to Zephyrn Securities {currentPlan.name} plan
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="p-4 bg-slate-800/50 rounded-lg">
+                <div className="p-4 bg-white/5 rounded-lg">
                   <p className="text-white font-medium">{currentPlan.name} Plan</p>
-                  <p className="text-slate-300">
+                  <p className="text-white/60">
                     ${currentPlan.price}/{currentPlan.period}
                   </p>
                 </div>
-                <p className="text-slate-300 text-sm">Redirecting to your dashboard in a few seconds...</p>
+                <p className="text-white/60 text-sm">Redirecting to your dashboard in a few seconds...</p>
               </div>
             </CardContent>
           </Card>
@@ -151,7 +235,7 @@ export default function PaymentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -161,7 +245,7 @@ export default function PaymentPage() {
         {/* Back button */}
         <div className="mb-6">
           <Link href="/auth">
-            <Button variant="ghost" className="text-slate-300 hover:text-white">
+            <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-white/5">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Sign Up
             </Button>
@@ -170,7 +254,7 @@ export default function PaymentPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Plan Summary */}
-          <Card className="bg-black/20 border-slate-700 backdrop-blur-sm">
+          <Card className="bg-black/20 border-white/10 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
                 <Shield className="w-5 h-5 mr-2" />
@@ -178,159 +262,109 @@ export default function PaymentPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 bg-slate-800/50 rounded-lg">
+              <div className="p-4 bg-white/5 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white font-medium">{currentPlan.name} Plan</span>
-                  <Badge variant="secondary" className="bg-blue-900/30 text-blue-300">
+                  <Badge variant="secondary" className="bg-white/10 text-white border-white/20">
                     Monthly
                   </Badge>
                 </div>
-                <div className="text-2xl font-bold text-white mb-3">
+                <div className="text-2xl font-bold text-white mb-2">
                   ${currentPlan.price}/{currentPlan.period}
+                </div>
+                <div className="text-sm text-white/60 mb-3">
+                  ≈ ₹{currentPlan.priceInr.toLocaleString()}/{currentPlan.period}
                 </div>
                 <ul className="space-y-2">
                   {currentPlan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center text-sm text-slate-300">
-                      <CheckCircle className="w-3 h-3 mr-2 text-green-400" />
+                    <li key={index} className="flex items-center text-sm text-white/60">
+                      <CheckCircle className="w-3 h-3 mr-2 text-white/40" />
                       {feature}
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="border-t border-slate-600 pt-4">
-                <div className="flex items-center justify-between text-lg font-bold text-white">
-                  <span>Total</span>
-                  <span>${currentPlan.price}</span>
+              <div className="p-4 bg-white/5 rounded-lg">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/60">Subtotal (USD)</span>
+                  <span className="text-white">${currentPlan.price}</span>
                 </div>
-                <p className="text-slate-400 text-sm mt-1">Billed monthly • Cancel anytime</p>
-              </div>
-
-              <div className="flex items-center space-x-2 text-slate-300 text-sm">
-                <Lock className="w-4 h-4" />
-                <span>Secured by 256-bit SSL encryption</span>
+                <div className="flex items-center justify-between text-sm mt-2">
+                  <span className="text-white/60">Subtotal (INR)</span>
+                  <span className="text-white">₹{currentPlan.priceInr.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm mt-2">
+                  <span className="text-white/60">Tax</span>
+                  <span className="text-white">$0.00</span>
+                </div>
+                <div className="border-t border-white/10 mt-2 pt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-medium">Total (INR)</span>
+                    <span className="text-white font-bold text-lg">₹{currentPlan.priceInr.toLocaleString()}</span>
+                  </div>
+                  <div className="text-xs text-white/40 mt-1">
+                    Payment will be processed in Indian Rupees (INR)
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Payment Form */}
-          <Card className="bg-black/20 border-slate-700 backdrop-blur-sm">
+          <Card className="bg-black/20 border-white/10 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
                 <CreditCard className="w-5 h-5 mr-2" />
-                Payment Details
+                Secure Payment
               </CardTitle>
-              <CardDescription className="text-slate-300">
-                Enter your payment information to complete your subscription
+              <CardDescription className="text-white/60">
+                Complete your purchase with Razorpay
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form action={handlePayment} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cardName" className="text-white">
-                    Cardholder Name
-                  </Label>
-                  <Input
-                    id="cardName"
-                    name="cardName"
-                    type="text"
-                    placeholder="John Doe"
-                    required
-                    className="bg-slate-800 border-slate-600 text-white"
-                  />
-                </div>
+            <CardContent className="space-y-6">
+              <div className="flex items-center space-x-2 text-sm text-white/60">
+                <Lock className="w-4 h-4" />
+                <span>Your payment is secured with SSL encryption</span>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="cardNumber" className="text-white">
-                    Card Number
-                  </Label>
-                  <Input
-                    id="cardNumber"
-                    name="cardNumber"
-                    type="text"
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={19}
-                    required
-                    className="bg-slate-800 border-slate-600 text-white"
-                    onChange={(e) => {
-                      // Format card number with spaces
-                      let value = e.target.value.replace(/\s/g, "").replace(/\D/g, "")
-                      value = value.replace(/(\d{4})(?=\d)/g, "$1 ")
-                      e.target.value = value
-                    }}
-                  />
-                </div>
+              {error && (
+                <Alert variant="destructive" className="bg-red-500/10 border-red-500/20">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-red-300">{error}</AlertDescription>
+                </Alert>
+              )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="expiryDate" className="text-white">
-                      Expiry Date
-                    </Label>
-                    <Input
-                      id="expiryDate"
-                      name="expiryDate"
-                      type="text"
-                      placeholder="MM/YY"
-                      maxLength={5}
-                      required
-                      className="bg-slate-800 border-slate-600 text-white"
-                      onChange={(e) => {
-                        // Format expiry date
-                        let value = e.target.value.replace(/\D/g, "")
-                        if (value.length >= 2) {
-                          value = value.substring(0, 2) + "/" + value.substring(2, 4)
-                        }
-                        e.target.value = value
-                      }}
-                    />
+              <Button
+                onClick={handlePayment}
+                disabled={isLoading}
+                className="w-full bg-white text-black hover:bg-white/90 font-medium py-3"
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
+                    Processing...
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cvv" className="text-white">
-                      CVV
-                    </Label>
-                    <Input
-                      id="cvv"
-                      name="cvv"
-                      type="text"
-                      placeholder="123"
-                      maxLength={4}
-                      required
-                      className="bg-slate-800 border-slate-600 text-white"
-                      onChange={(e) => {
-                        // Only allow numbers
-                        e.target.value = e.target.value.replace(/\D/g, "")
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {error && (
-                  <Alert variant="destructive" className="bg-red-900/20 border-red-800">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-red-200">{error}</AlertDescription>
-                  </Alert>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Pay ₹{currentPlan.priceInr.toLocaleString()}
+                  </>
                 )}
+              </Button>
 
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    "Processing Payment..."
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4 mr-2" />
-                      Pay ${currentPlan.price}
-                    </>
-                  )}
-                </Button>
-
-                <p className="text-slate-400 text-xs text-center">
-                  By completing this purchase, you agree to our Terms of Service and Privacy Policy. Your subscription
-                  will automatically renew monthly.
+              <div className="text-center">
+                <p className="text-xs text-white/40">
+                  By completing this purchase, you agree to our{" "}
+                  <Link href="/terms" className="text-white/60 hover:text-white underline">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/privacy" className="text-white/60 hover:text-white underline">
+                    Privacy Policy
+                  </Link>
                 </p>
-              </form>
+              </div>
             </CardContent>
           </Card>
         </div>

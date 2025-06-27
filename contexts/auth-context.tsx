@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect } from "react"
 import {
   User,
+  UserCredential,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
@@ -17,7 +18,7 @@ type AuthContextType = {
   loading: boolean
   signInWithEmail: (email: string, password: string) => Promise<void>
   signUpWithEmail: (email: string, password: string) => Promise<void>
-  signInWithGoogle: () => Promise<void>
+  signInWithGoogle: () => Promise<UserCredential>
   logout: () => Promise<void>
 }
 
@@ -60,7 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider)
+      const result = await signInWithPopup(auth, googleProvider)
+      return result
     } catch (error) {
       console.error("Error signing in with Google:", error)
       throw error
@@ -73,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Error signing out:", error)
       throw error
-  }
+    }
   }
 
   return (

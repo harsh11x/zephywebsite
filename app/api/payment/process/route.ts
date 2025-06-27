@@ -2,33 +2,17 @@ import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
   try {
-    const { plan, email, amount, cardNumber } = await request.json()
+    const { plan, email, amount } = await request.json()
 
-    // Simulate payment processing delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // In a real implementation, you would:
-    // 1. Validate the payment details
-    // 2. Process payment with Stripe/PayPal/etc.
-    // 3. Create subscription in your database
-    // 4. Send confirmation email
-    // 5. Update user's plan in Supabase
-
-    // For demo purposes, we'll simulate a successful payment
-    const paymentId = `pay_${Math.random().toString(36).substring(2, 15)}`
-
-    // Here you would typically:
-    // - Create a subscription record
-    // - Update user's plan in database
-    // - Send confirmation email
+    // Redirect to Razorpay flow
+    // This endpoint is kept for backward compatibility
+    // New payments should use /api/payment/razorpay/create-order
 
     return NextResponse.json(
       {
-        success: true,
-        paymentId,
-        plan,
-        amount,
-        message: "Payment processed successfully",
+        success: false,
+        message: "Please use the new Razorpay payment flow",
+        redirect: `/payment?plan=${plan}&email=${email}`,
       },
       { status: 200 },
     )

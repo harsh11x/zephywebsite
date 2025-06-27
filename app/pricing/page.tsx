@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Shield, Zap, Crown, Building, Calendar, ArrowRight } from "lucide-react"
-import { motion } from "framer-motion"
+import { MotionDiv } from "@/components/motion"
 import Link from "next/link"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
@@ -19,15 +19,17 @@ export default function PricingPage() {
     {
       id: "free",
       name: "Starter",
-      price: "$0",
+      price: 0,
+      priceDisplay: "$0",
       period: "forever",
       description: "Essential security for small teams",
       icon: Shield,
       popular: false,
       features: [
-        "Upload limit: 100 MB",
-        "3 encryptions per day",
-        "Any type of file",
+        "File upload limit: 100 MB per file",
+        "Daily encryption limit: 3 files",
+        "Daily decryption limit: 3 files",
+        "Any type of file supported",
         "Basic AES-256 encryption",
         "Email support",
       ],
@@ -35,15 +37,17 @@ export default function PricingPage() {
     {
       id: "standard",
       name: "Professional",
-      price: "$49",
+      price: 19.99,
+      priceDisplay: "$19.99",
       period: "per month",
       description: "Advanced security for growing businesses",
       icon: Zap,
       popular: true,
       features: [
-        "Upload limit: 1 GB",
-        "50 encryptions per day",
-        "Any type of file",
+        "File upload limit: 1 GB per file",
+        "Daily encryption limit: 50 files",
+        "Daily decryption limit: 50 files",
+        "Any type of file supported",
         "Advanced AES-256 encryption",
         "Priority support",
         "Encryption analytics",
@@ -53,14 +57,16 @@ export default function PricingPage() {
     {
       id: "professional",
       name: "Enterprise",
-      price: "$149",
+      price: 89.99,
+      priceDisplay: "$89.99",
       period: "per month",
       description: "Complete security for large organizations",
       icon: Crown,
       popular: false,
       features: [
-        "Upload limit: 10 GB",
-        "Unlimited encryptions",
+        "File upload limit: 10 GB per file",
+        "Daily encryption limit: Unlimited",
+        "Daily decryption limit: Unlimited",
         "Advanced threat detection",
         "Military-grade encryption",
         "24/7 dedicated support",
@@ -72,13 +78,15 @@ export default function PricingPage() {
     {
       id: "enterprise",
       name: "Global",
-      price: "Custom",
+      price: 0,
+      priceDisplay: "Custom",
       period: "contact us",
       description: "Tailored solutions for global enterprises",
       icon: Building,
       popular: false,
       features: [
-        "Unlimited everything",
+        "Unlimited file upload size",
+        "Unlimited daily operations",
         "Custom deployment",
         "Dedicated infrastructure",
         "White-label solutions",
@@ -99,7 +107,7 @@ export default function PricingPage() {
   }
 
   const openCalendly = () => {
-    window.open("https://calendly.com/zephyrn-securities/enterprise-consultation", "_blank")
+    window.open("https://calendly.com/zephyrn-securities/30min", "_blank")
   }
 
   return (
@@ -110,7 +118,7 @@ export default function PricingPage() {
       <Header />
 
       <main className="container py-16 relative z-10">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        <MotionDiv initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           {/* Header Section */}
           <div className="text-center mb-20">
             <Badge className="bg-white/5 text-white/80 border border-white/10 px-4 py-2 mb-8 backdrop-blur-sm">
@@ -137,7 +145,7 @@ export default function PricingPage() {
           {/* Pricing Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 mb-20">
             {plans.map((plan, index) => (
-              <motion.div
+              <MotionDiv
                 key={plan.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -160,8 +168,8 @@ export default function PricingPage() {
                     </div>
                     <CardTitle className="text-2xl font-light text-white mb-4">{plan.name}</CardTitle>
                     <div className="text-center mb-4">
-                      <span className="text-4xl font-light text-white">{plan.price}</span>
-                      {plan.price !== "Custom" && <span className="text-white/60 ml-2 font-light">/{plan.period}</span>}
+                      <span className="text-4xl font-light text-white">{plan.priceDisplay}</span>
+                      {plan.priceDisplay !== "Custom" && <span className="text-white/60 ml-2 font-light">/{plan.period}</span>}
                     </div>
                     <CardDescription className="text-white/60 font-light">{plan.description}</CardDescription>
                   </CardHeader>
@@ -192,19 +200,19 @@ export default function PricingPage() {
                               : "bg-white/10 text-white hover:bg-white/20"
                           }`}
                         >
-                          Get Started
+                          {plan.id === "free" ? "Get Started Free" : "Get Started"}
                           <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                       )}
                     </div>
                   </CardContent>
                 </Card>
-              </motion.div>
+              </MotionDiv>
             ))}
           </div>
 
           {/* Features Comparison */}
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -249,10 +257,10 @@ export default function PricingPage() {
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </MotionDiv>
 
           {/* FAQ Section */}
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -295,8 +303,8 @@ export default function PricingPage() {
                 </Card>
               ))}
             </div>
-          </motion.div>
-        </motion.div>
+          </MotionDiv>
+        </MotionDiv>
       </main>
 
       <Footer />

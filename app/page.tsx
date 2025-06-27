@@ -11,6 +11,12 @@ import Link from "next/link"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 
+// Motion-wrapped components
+const MotionDiv = motion.div
+const MotionH1 = motion.h1
+const MotionP = motion.p
+const MotionSpan = motion.span
+
 export default function HomePage() {
   const { user } = useAuth()
   const { scrollYProgress } = useScroll()
@@ -108,14 +114,14 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative py-32 sm:py-40">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
-          <motion.div
+          <MotionDiv
             style={{ y, opacity }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
             className="text-center max-w-4xl mx-auto"
           >
-            <motion.div
+            <MotionDiv
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
@@ -124,9 +130,9 @@ export default function HomePage() {
               <Badge className="bg-white/5 text-white/80 border border-white/10 px-6 py-2 text-sm font-medium backdrop-blur-sm">
                 Trusted by 15,000+ Global Enterprises
               </Badge>
-            </motion.div>
+            </MotionDiv>
 
-            <motion.h1
+            <MotionH1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
@@ -135,9 +141,9 @@ export default function HomePage() {
               <span className="block text-white">Enterprise</span>
               <span className="block text-white/60">Cybersecurity</span>
               <span className="block text-white/30">Redefined</span>
-            </motion.h1>
+            </MotionH1>
 
-            <motion.p
+            <MotionP
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
@@ -147,9 +153,9 @@ export default function HomePage() {
               intelligence.
               <br />
               <span className="text-white/80">Protecting Fortune 500 companies worldwide.</span>
-            </motion.p>
+            </MotionP>
 
-            <motion.div
+            <MotionDiv
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.8 }}
@@ -185,164 +191,134 @@ export default function HomePage() {
                   Watch Demo
                 </Button>
               </Link>
-            </motion.div>
-          </motion.div>
+            </MotionDiv>
+          </MotionDiv>
         </div>
       </section>
 
       {/* Real-time Stats */}
       <section className="py-20 border-y border-white/10">
         <div className="container">
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-8"
+            className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center"
           >
-            <div className="text-center">
-              <motion.div
-                className="text-4xl lg:text-6xl font-light text-white mb-2"
-                animate={{ opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-              >
-                {stats.clients.toLocaleString()}+
-              </motion.div>
-              <div className="text-white/60 font-medium">Global Enterprises</div>
-              <div className="text-white/40 text-sm">Protected Daily</div>
+            <div className="p-4">
+              <h3 className="text-5xl font-light text-white">
+                <MotionSpan animate={{ opacity: [0, 1, 0] }} transition={{ duration: 3, repeat: Infinity }}>
+                  {stats.clients.toLocaleString()}
+                </MotionSpan>
+              </h3>
+              <p className="text-white/60 mt-2">Global Clients</p>
             </div>
-            <div className="text-center">
-              <motion.div
-                className="text-4xl lg:text-6xl font-light text-white mb-2"
-                animate={{ opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, delay: 0.5 }}
-              >
-                {(stats.threats / 1000000).toFixed(0)}M+
-              </motion.div>
-              <div className="text-white/60 font-medium">Threats Blocked</div>
-              <div className="text-white/40 text-sm">This Month</div>
+            <div className="p-4">
+              <h3 className="text-5xl font-light text-white">
+                <MotionSpan
+                  animate={{ opacity: [0, 1, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
+                >
+                  {Math.floor(stats.threats / 1000000)}M+
+                </MotionSpan>
+              </h3>
+              <p className="text-white/60 mt-2">Threats Neutralized</p>
             </div>
-            <div className="text-center">
-              <motion.div
-                className="text-4xl lg:text-6xl font-light text-white mb-2"
-                animate={{ opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, delay: 1 }}
-              >
-                {stats.responseTime.toFixed(1)}ms
-              </motion.div>
-              <div className="text-white/60 font-medium">Response Time</div>
-              <div className="text-white/40 text-sm">Average Detection</div>
+            <div className="p-4">
+              <h3 className="text-5xl font-light text-white">
+                <MotionSpan
+                  animate={{ opacity: [0, 1, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+                >
+                  {stats.responseTime.toFixed(2)}s
+                </MotionSpan>
+              </h3>
+              <p className="text-white/60 mt-2">Avg. Response Time</p>
             </div>
-            <div className="text-center">
-              <motion.div
-                className="text-4xl lg:text-6xl font-light text-white mb-2"
-                animate={{ opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, delay: 1.5 }}
-              >
-                {stats.uptime.toFixed(2)}%
-              </motion.div>
-              <div className="text-white/60 font-medium">Uptime SLA</div>
-              <div className="text-white/40 text-sm">Enterprise Grade</div>
+            <div className="p-4">
+              <h3 className="text-5xl font-light text-white">
+                <MotionSpan
+                  animate={{ opacity: [0, 1, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
+                >
+                  {stats.uptime.toFixed(2)}%
+                </MotionSpan>
+              </h3>
+              <p className="text-white/60 mt-2">Platform Uptime</p>
             </div>
-          </motion.div>
+          </MotionDiv>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-32">
+      {/* Core Features */}
+      <section className="py-20">
         <div className="container">
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="text-center mb-20"
+            className="text-center mb-12"
           >
-            <Badge className="bg-white/5 text-white/80 border border-white/10 px-4 py-2 mb-8 backdrop-blur-sm">
-              Enterprise Capabilities
-            </Badge>
-            <h2 className="text-5xl sm:text-7xl font-light text-white mb-6">
-              Uncompromising
-              <br />
-              <span className="text-white/60">Security</span>
-            </h2>
-            <p className="text-xl text-white/60 max-w-3xl mx-auto font-light">
-              Built for enterprises that demand the highest level of cybersecurity protection and compliance
-            </p>
-          </motion.div>
+            <h2 className="text-5xl font-light tracking-tight text-white">The Future of Digital Defense</h2>
+            <p className="text-xl text-white/60 mt-4">Unparalleled security for the modern enterprise.</p>
+          </MotionDiv>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-white/10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <motion.div
-                key={feature.title}
+              <MotionDiv
+                key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                whileHover={{ scale: 1.02 }}
-                className="group"
               >
-                <Card className="bg-black border-0 hover:bg-white/5 transition-all duration-500 h-full rounded-none">
-                  <CardHeader className="p-12">
-                    <div className="p-4 bg-white/10 rounded-none w-fit mb-6 group-hover:bg-white/20 transition-all duration-300">
-                      <feature.icon className="h-8 w-8 text-white" />
+                <Card className="bg-white/5 border border-white/10 text-center h-full">
+                  <CardHeader>
+                    <div className="flex justify-center mb-4">
+                      <feature.icon className="w-10 h-10 text-white" />
                     </div>
-                    <CardTitle className="text-2xl font-light text-white mb-4">{feature.title}</CardTitle>
-                    <CardDescription className="text-white/60 text-lg leading-relaxed font-light">
-                      {feature.description}
-                    </CardDescription>
+                    <CardTitle className="text-white text-xl">{feature.title}</CardTitle>
                   </CardHeader>
+                  <CardContent>
+                    <p className="text-white/60">{feature.description}</p>
+                  </CardContent>
                 </Card>
-              </motion.div>
+              </MotionDiv>
             ))}
           </div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className="py-32 border-t border-white/10">
+      <section className="py-20 border-y border-white/10">
         <div className="container">
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="text-center mb-20"
+            className="text-center mb-12"
           >
-            <Badge className="bg-white/5 text-white/80 border border-white/10 px-4 py-2 mb-8 backdrop-blur-sm">
-              Customer Success
-            </Badge>
-            <h2 className="text-5xl sm:text-7xl font-light text-white mb-6">
-              Trusted by
-              <br />
-              <span className="text-white/60">Industry Leaders</span>
-            </h2>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10">
+            <h2 className="text-5xl font-light tracking-tight text-white">Trusted by Industry Leaders</h2>
+          </MotionDiv>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <motion.div
-                key={testimonial.name}
+              <MotionDiv
+                key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                whileHover={{ scale: 1.02 }}
               >
-                <Card className="bg-black border-0 hover:bg-white/5 transition-all duration-500 h-full rounded-none">
-                  <CardContent className="p-12">
-                    <div className="flex items-center mb-6">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <div key={i} className="w-1 h-1 bg-white/60 rounded-full mr-2" />
-                      ))}
-                    </div>
-                    <p className="text-white/80 text-lg mb-8 font-light leading-relaxed">"{testimonial.content}"</p>
-                    <div className="border-t border-white/10 pt-6">
-                      <div className="font-light text-white text-lg">{testimonial.name}</div>
-                    </div>
+                <Card className="bg-white/5 border-white/10 h-full">
+                  <CardContent className="pt-6">
+                    <p className="text-white/80 mb-4">"{testimonial.content}"</p>
+                    <p className="text-white font-semibold">{testimonial.name}</p>
                   </CardContent>
                 </Card>
-              </motion.div>
+              </MotionDiv>
             ))}
           </div>
         </div>
@@ -351,7 +327,7 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="py-32 border-t border-white/10">
         <div className="container text-center">
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -387,7 +363,7 @@ export default function HomePage() {
                 </Link>
               </div>
             )}
-          </motion.div>
+          </MotionDiv>
         </div>
       </section>
 

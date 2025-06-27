@@ -6,19 +6,21 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Check, Zap, FileText, Lock, Unlock, Clock, Calendar, ArrowUpRight } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent } from "framer-motion"
+import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent, animate } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Header from "@/components/header"
 import { cn } from "@/lib/utils"
+import { Tooltip, TooltipProvider } from "@/components/ui/tooltip"
+import { Badge } from "@/components/ui/badge"
 
 // Create properly typed motion components
-const MotionDiv = motion<HTMLDivElement>("div")
-const MotionMain = motion<HTMLElement>("main")
-const MotionSection = motion<HTMLElement>("section")
-const MotionH1 = motion<HTMLHeadingElement>("h1")
-const MotionP = motion<HTMLParagraphElement>("p")
-const MotionSpan = motion<HTMLSpanElement>("span")
-const MotionLi = motion<HTMLLIElement>("li")
+const MotionDiv = motion.div
+const MotionMain = motion.main
+const MotionSection = motion.section
+const MotionH1 = motion.h1
+const MotionP = motion.p
+const MotionSpan = motion.span
+const MotionLi = motion.li
 
 const plans = [
   {
@@ -86,19 +88,19 @@ const plans = [
 ]
 
 // Mock data for usage history - In production, this would come from your backend
-const mockUsageHistory = {
+const mockUsageHistory: Record<string, { type: string; fileName: string; timestamp: string; size: string }[]> = {
   today: [
     { type: "encrypt", fileName: "document.pdf", timestamp: "2024-03-20T10:30:00", size: "2.5MB" },
     { type: "decrypt", fileName: "report.docx", timestamp: "2024-03-20T09:15:00", size: "1.8MB" },
     { type: "encrypt", fileName: "presentation.pptx", timestamp: "2024-03-20T08:45:00", size: "5.2MB" },
   ],
-  thisWeek: [
+  week: [
     { type: "encrypt", fileName: "contract.pdf", timestamp: "2024-03-19T15:20:00", size: "3.1MB" },
     { type: "decrypt", fileName: "budget.xlsx", timestamp: "2024-03-19T14:10:00", size: "2.3MB" },
     { type: "encrypt", fileName: "proposal.docx", timestamp: "2024-03-18T11:30:00", size: "1.5MB" },
     { type: "decrypt", fileName: "report.pdf", timestamp: "2024-03-18T10:15:00", size: "4.2MB" },
   ],
-  thisMonth: [
+  month: [
     { type: "encrypt", fileName: "annual-report.pdf", timestamp: "2024-03-15T16:45:00", size: "8.7MB" },
     { type: "decrypt", fileName: "financial-statement.xlsx", timestamp: "2024-03-14T13:20:00", size: "3.4MB" },
     { type: "encrypt", fileName: "presentation.pptx", timestamp: "2024-03-13T09:30:00", size: "6.1MB" },
@@ -138,9 +140,9 @@ const AnimatedNumber = ({ value, className }: { value: number | string; classNam
       ease: "easeOut"
     })
     return controls.stop
-  }, [value])
+  }, [value, count])
 
-  return <motion.span className={className}>{rounded}</motion.span>
+  return <MotionSpan className={className}>{rounded}</MotionSpan>
 }
 
 export default function PlatformPage() {
@@ -171,7 +173,7 @@ export default function PlatformPage() {
 
   useEffect(() => {
     // Calculate usage statistics
-    const allOperations = [...mockUsageHistory.today, ...mockUsageHistory.thisWeek, ...mockUsageHistory.thisMonth]
+    const allOperations = [...(mockUsageHistory.today || []), ...(mockUsageHistory.week || []), ...(mockUsageHistory.month || [])]
     const uniqueFiles = new Set(allOperations.map(op => op.fileName))
     
     const totalEncryptions = allOperations.filter(op => op.type === "encrypt").length
@@ -281,7 +283,7 @@ export default function PlatformPage() {
   }
 
   return (
-    <>
+    <TooltipProvider>
       <Header />
       <motion.main
         style={{ opacity: cardOpacity, scale: cardScale, y: cardY }}
@@ -380,93 +382,42 @@ export default function PlatformPage() {
                     <p className="text-white/60 text-sm leading-relaxed">{plan.description}</p>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <ul className="space-y-4">
-                      {plan.features.map((feature, featureIndex) => (
-                        <motion.li
-                          key={feature}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: 0.1 * featureIndex }}
-                          className="flex items-start space-x-3 text-white/80"
-                        >
-                          <motion.div
-                            whileHover={{ scale: 1.2, rotate: 360 }}
-                            transition={{ duration: 0.3 }}
-                            className="mt-1"
-                          >
-                            <Check className="w-4 h-4 text-white/60" />
-                          </motion.div>
-                          <span className="text-sm leading-relaxed">{feature}</span>
-                        </motion.li>
+                    <div className="space-y-3 text-left text-white/80">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-center">
+                          <Check className="w-4 h-4 mr-3 text-green-400" />
+                          <span>{feature}</span>
+                        </li>
                       ))}
-                    </ul>
-                  </CardContent>
-                  <CardFooter>
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="w-full"
-                    >
+                    </div>
+                    {plan.name === "Enterprise" ? (
+                      <a
+                        href="https://calendly.com/zephyrn-securities/30min"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={cn(
+                          "w-full mt-8 py-6 text-lg font-bold transition-all duration-300 rounded-lg flex items-center justify-center",
+                          "bg-white text-black hover:bg-white/90",
+                          plan.badge === "POPULAR" && "bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:opacity-90"
+                        )}
+                        style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
+                      >
+                        Contact Sales
+                      </a>
+                    ) : (
                       <Button
                         onClick={() => handleUpgrade(plan.name)}
                         disabled={isUpgrading}
                         className={cn(
-                          "w-full h-12 text-base font-medium transition-all duration-300",
-                          plan.name === "Enterprise"
-                            ? "bg-white/10 hover:bg-white/20 text-white"
-                            : "bg-white text-black hover:bg-white/90"
+                          "w-full mt-8 py-6 text-lg font-bold transition-all duration-300 rounded-lg",
+                          "bg-white text-black hover:bg-white/90",
+                          plan.badge === "POPULAR" && "bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:opacity-90"
                         )}
                       >
-                        <AnimatePresence mode="wait">
-                          {isUpgrading ? (
-                            <motion.div
-                              key="loading"
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -10 }}
-                              transition={{ duration: 0.2 }}
-                              className="flex items-center space-x-2"
-                            >
-                              <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                              >
-                                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                </svg>
-                              </motion.div>
-                              <span>Processing...</span>
-                            </motion.div>
-                          ) : plan.name === "Enterprise" ? (
-                            <motion.span
-                              key="contact"
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -10 }}
-                              transition={{ duration: 0.2 }}
-                              className="flex items-center space-x-2"
-                            >
-                              <span>Contact Sales</span>
-                              <ArrowUpRight className="w-4 h-4" />
-                            </motion.span>
-                          ) : (
-                            <motion.span
-                              key="upgrade"
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -10 }}
-                              transition={{ duration: 0.2 }}
-                              className="flex items-center space-x-2"
-                            >
-                              <span>Upgrade Now</span>
-                              <Zap className="w-4 h-4" />
-                            </motion.span>
-                          )}
-                        </AnimatePresence>
+                        {isUpgrading ? "Processing..." : `Upgrade to ${plan.name}`}
                       </Button>
-                    </motion.div>
-                  </CardFooter>
+                    )}
+                  </CardContent>
                 </Card>
               </GlowingCard>
             </motion.div>
@@ -490,148 +441,80 @@ export default function PlatformPage() {
               </motion.div>
             </CardHeader>
             <CardContent>
-              <motion.div
-                className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.8 }}
-              >
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 {[
-                  { label: "Total Encryptions", value: usageStats.totalEncryptions, icon: Lock },
-                  { label: "Total Decryptions", value: usageStats.totalDecryptions, icon: Unlock },
-                  { label: "Files Processed", value: usageStats.totalFilesProcessed, icon: FileText },
-                  { label: "Avg. File Size", value: usageStats.averageFileSize, icon: ArrowUpRight }
+                  { label: "Total Encryptions", value: usageStats.totalEncryptions, icon: Lock, color: "from-green-400 to-green-600", tooltip: "Number of files encrypted" },
+                  { label: "Total Decryptions", value: usageStats.totalDecryptions, icon: Unlock, color: "from-blue-400 to-blue-600", tooltip: "Number of files decrypted" },
+                  { label: "Files Processed", value: usageStats.totalFilesProcessed, icon: FileText, color: "from-purple-400 to-purple-600", tooltip: "Unique files processed" },
+                  { label: "Avg. File Size", value: usageStats.averageFileSize, icon: ArrowUpRight, color: "from-yellow-400 to-yellow-600", tooltip: "Average file size processed" }
                 ].map((stat, index) => (
                   <motion.div
                     key={stat.label}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.1 * index }}
-                    whileHover={{ scale: 1.02 }}
+                    whileHover={{ scale: 1.04 }}
                   >
                     <GlowingCard>
-                      <Card className="bg-transparent border-0">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between">
-                            <div className="space-y-1">
-                              <p className="text-white/60 text-sm font-medium">{stat.label}</p>
-                              <AnimatedNumber
-                                value={stat.value}
-                                className="text-3xl font-light text-white"
-                              />
-                            </div>
-                            <motion.div
-                              whileHover={{ rotate: 360, scale: 1.1 }}
-                              transition={{ duration: 0.3 }}
-                              className="p-3 bg-white/5 rounded-lg"
-                            >
-                              <stat.icon className="w-6 h-6 text-white/40" />
-                            </motion.div>
+                      <Card className="bg-gradient-to-br border-0 p-0 from-black/80 to-slate-900/80">
+                        <CardContent className="p-6 flex items-center gap-4">
+                          <div className={`rounded-full p-3 bg-gradient-to-br ${stat.color} shadow-lg flex items-center justify-center`}>
+                            <Tooltip content={stat.tooltip}>
+                              <stat.icon className="w-7 h-7 text-white" />
+                            </Tooltip>
+                          </div>
+                          <div>
+                            <p className="text-white/70 text-xs font-medium mb-1">{stat.label}</p>
+                            <AnimatedNumber value={stat.value} className="text-2xl font-bold text-white" />
                           </div>
                         </CardContent>
                       </Card>
                     </GlowingCard>
                   </motion.div>
                 ))}
-              </motion.div>
+              </div>
 
-              {/* Usage History */}
-              <motion.div
-                className="mt-12"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 1 }}
-              >
+              {/* Usage History Timeline */}
+              <div className="mt-12">
                 <Tabs defaultValue="today" className="w-full" onValueChange={setActiveTab}>
-                  <TabsList className="bg-white/5 border-white/10 backdrop-blur-sm mb-6 p-1">
-                    {[
-                      { value: "today", icon: Clock, label: "Today" },
-                      { value: "week", icon: Calendar, label: "This Week" },
-                      { value: "month", icon: Calendar, label: "This Month" }
-                    ].map((tab, index) => (
-                      <motion.div
-                        key={tab.value}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.1 * index }}
-                      >
-                        <TabsTrigger
-                          value={tab.value}
-                          className={cn(
-                            "data-[state=active]:bg-white/10 transition-all duration-300",
-                            "px-6 py-2.5 text-sm font-medium"
-                          )}
-                        >
-                          <tab.icon className="w-4 h-4 mr-2" />
-                          {tab.label}
-                        </TabsTrigger>
-                      </motion.div>
-                    ))}
+                  <TabsList className="grid w-full grid-cols-3 bg-white/5 p-1 h-12 rounded-xl">
+                    <TabsTrigger value="today" onClick={() => setActiveTab("today")} className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white rounded-lg">Today</TabsTrigger>
+                    <TabsTrigger value="week" onClick={() => setActiveTab("week")} className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white rounded-lg">This Week</TabsTrigger>
+                    <TabsTrigger value="month" onClick={() => setActiveTab("month")} className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white rounded-lg">This Month</TabsTrigger>
                   </TabsList>
-
                   <AnimatePresence mode="wait">
-                    {["today", "week", "month"].map((period) => (
-                      <TabsContent key={period} value={period} className="space-y-4">
-                        {mockUsageHistory[period as keyof typeof mockUsageHistory].map((operation, index) => (
-                          <motion.div
-                            key={index}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ duration: 0.3, delay: 0.05 * index }}
-                            whileHover={{ scale: 1.01 }}
-                          >
-                            <GlowingCard>
-                              <Card className="bg-transparent border-0">
-                                <CardContent className="p-4">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-4">
-                                      <motion.div
-                                        className="p-3 bg-white/5 rounded-lg"
-                                        whileHover={{ scale: 1.1, rotate: 360 }}
-                                        transition={{ duration: 0.3 }}
-                                      >
-                                        {getOperationIcon(operation.type)}
-                                      </motion.div>
-                                      <div className="space-y-1">
-                                        <motion.p
-                                          className="text-white font-medium"
-                                          initial={{ opacity: 0 }}
-                                          animate={{ opacity: 1 }}
-                                          transition={{ duration: 0.3, delay: 0.1 * index }}
-                                        >
-                                          {operation.fileName}
-                                        </motion.p>
-                                        <motion.p
-                                          className="text-white/60 text-sm"
-                                          initial={{ opacity: 0 }}
-                                          animate={{ opacity: 1 }}
-                                          transition={{ duration: 0.3, delay: 0.1 * index + 0.05 }}
-                                        >
-                                          {formatTimestamp(operation.timestamp)}
-                                        </motion.p>
-                                      </div>
-                                    </div>
-                                    <motion.div
-                                      className="text-right space-y-1"
-                                      initial={{ opacity: 0, x: 20 }}
-                                      animate={{ opacity: 1, x: 0 }}
-                                      transition={{ duration: 0.3, delay: 0.1 * index }}
-                                    >
-                                      <p className="text-white/80 font-medium">{operation.size}</p>
-                                      <p className="text-white/40 text-sm capitalize">{operation.type}ed</p>
-                                    </motion.div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            </GlowingCard>
-                          </motion.div>
-                        ))}
-                      </TabsContent>
-                    ))}
+                    <MotionDiv
+                      key={activeTab}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-6"
+                    >
+                      <ol className="relative border-l border-white/10 ml-4">
+                        {mockUsageHistory[activeTab] && mockUsageHistory[activeTab].length > 0 ? (
+                          mockUsageHistory[activeTab].map((item, index) => (
+                            <li key={index} className="mb-10 ml-6">
+                              <span className={`absolute flex items-center justify-center w-8 h-8 rounded-full -left-4 ring-4 ring-black/80 ${item.type === "encrypt" ? "bg-green-500/80" : "bg-blue-500/80"}`}>
+                                {item.type === "encrypt" ? <Lock className="w-4 h-4 text-white" /> : <Unlock className="w-4 h-4 text-white" />}
+                              </span>
+                              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                <div>
+                                  <p className="text-white font-semibold">{item.fileName}</p>
+                                  <p className="text-white/60 text-xs">{item.type === "encrypt" ? "Encrypted" : "Decrypted"} • {item.size}</p>
+                                </div>
+                                <span className="text-white/40 text-xs">{formatTimestamp(item.timestamp)}</span>
+                              </div>
+                            </li>
+                          ))
+                        ) : (
+                          <div className="text-center text-white/60 py-8">No operations found for the selected period.</div>
+                        )}
+                      </ol>
+                    </MotionDiv>
                   </AnimatePresence>
                 </Tabs>
-              </motion.div>
+              </div>
             </CardContent>
           </Card>
         </GradientBorder>
@@ -715,6 +598,6 @@ export default function PlatformPage() {
           </Card>
         </GradientBorder>
       </motion.main>
-    </>
+    </TooltipProvider>
   )
 } 
