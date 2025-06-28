@@ -103,7 +103,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
       {/* Subtle grid pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px]" />
 
       {/* Minimal geometric accents */}
       <div className="absolute top-20 right-20 w-px h-40 bg-gradient-to-b from-white/20 to-transparent" />
@@ -341,29 +341,28 @@ export default function HomePage() {
             <p className="text-xl text-white/60 mb-12 max-w-3xl mx-auto font-light">
               Join the elite tier of organizations that trust Zephyrn Securities for their most critical assets.
             </p>
-            {!user && (
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                <Link href="/pricing">
-                  <Button
-                    size="lg"
-                    className="bg-white text-black hover:bg-white/90 px-12 py-4 text-lg font-medium transform hover:scale-105 transition-all duration-300 rounded-none"
-                  >
-                    Start Enterprise Trial
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                </Link>
-                <Link href="/contact">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="border-white/20 text-white hover:bg-white/5 px-12 py-4 text-lg font-medium rounded-none"
-                  >
-                    Contact Sales
-                  </Button>
-                </Link>
-              </div>
-            )}
           </MotionDiv>
+          {!user && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+              <Link href="/pricing">
+                <Button
+                  size="lg"
+                  className="bg-white text-black hover:bg-white/90 px-12 py-4 text-lg font-medium transform hover:scale-105 transition-all duration-300 rounded-none"
+                >
+                  Start Enterprise Trial
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+              <Link href="/contact-us">
+                <Button
+                  size="lg"
+                  className="bg-zinc-800 text-zinc-100 hover:bg-zinc-700 px-12 py-4 text-lg font-medium rounded-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 transition-all duration-200"
+                >
+                  Contact Sales
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
