@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_CHAT_SERVER_URL=http://localhost:3001
+    depends_on:
+      - chat-server
+    networks:
+      - zephy-network
+
+  chat-server:
+    build: ./chat-server
+    ports:
+      - "3001:3001"
+    environment:
+      - FRONTEND_URL=http://localhost:3000
+      - PORT=3001
+    networks:
+      - zephy-network
+
+networks:
+  zephy-network:
+    driver: bridge 

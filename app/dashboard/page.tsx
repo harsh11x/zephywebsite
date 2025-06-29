@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Lock, FileText } from "lucide-react"
+import { Lock, FileText, MessageCircle } from "lucide-react"
 import { MotionDiv, MotionH1, MotionP } from "@/components/motion"
 import Link from "next/link"
 import Header from "@/components/header"
@@ -55,6 +55,13 @@ export default function Dashboard() {
       description: "Encrypt sensitive text and messages with advanced encryption",
       icon: FileText,
       href: "/dashboard/text",
+      color: "from-white/20 to-white/5",
+    },
+    {
+      title: "Secure Chat",
+      description: "Connect with other users for real-time encrypted messaging and file sharing",
+      icon: MessageCircle,
+      href: "/dashboard/chat",
       color: "from-white/20 to-white/5",
     },
   ]

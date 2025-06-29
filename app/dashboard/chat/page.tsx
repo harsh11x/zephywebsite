@@ -1,0 +1,889 @@
+"use client"
+
+import { useEffect, useState, useRef } from "react"
+import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { 
+  MessageCircle, 
+  Send, 
+  Paperclip, 
+  User, 
+  Users, 
+  Plus,
+  File as FileIcon,
+  Download,
+  AlertCircle,
+  Key,
+  Lock,
+  Settings,
+  RefreshCw,
+  Wifi,
+  WifiOff,
+  Shield,
+  ShieldCheck,
+  Upload,
+  Copy,
+  Eye,
+  EyeOff,
+  Trash2,
+  Star,
+  QrCode,
+  CheckCircle,
+  AlertTriangle,
+  Info,
+  X
+} from "lucide-react"
+import { MotionDiv, /* MotionH1, MotionP */ } from "@/components/motion"
+import { motion } from "framer-motion"
+import Header from "@/components/header"
+import { io, Socket } from "socket.io-client"
+import { toast } from "sonner"
+import QRCode from 'qrcode'
+import { encryptFile, decryptFile, encryptText, decryptText, generateSecureKey } from "@/lib/crypto"
+
+interface Message {
+  id: string
+  sender: string
+  content: string
+  timestamp: Date
+  type: 'text' | 'file' | 'encrypted_text' | 'encrypted_file'
+  fileName?: string
+  fileUrl?: string
+  encrypted?: boolean
+  encryptionKeyId?: string
+  decrypted?: boolean
+}
+
+interface ChatConnection {
+  id: string
+  email: string
+  isOnline: boolean
+  lastSeen?: Date
+}
+
+interface EncryptionKey {
+  id: string
+  name: string
+  key: string
+  createdAt: Date
+  isDefault: boolean
+}
+
+export default function ChatPage() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [socket, setSocket] = useState<Socket | null>(null)
+  const [connections, setConnections] = useState<ChatConnection[]>([])
+  const [selectedConnection, setSelectedConnection] = useState<ChatConnection | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [newMessage, setNewMessage] = useState("")
+  const [connectingEmail, setConnectingEmail] = useState("")
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected')
+  const [pendingKey, setPendingKey] = useState<string>("")
+  const [encryptionKey, setEncryptionKey] = useState<string>("")
+  const [showClipboardWarning, setShowClipboardWarning] = useState(false)
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('')
+  const [showQrCode, setShowQrCode] = useState(false)
+  const [keyValidationError, setKeyValidationError] = useState<string>('')
+  const [isUploadingFile, setIsUploadingFile] = useState(false)
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const MAX_FILE_SIZE_MB = 100
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+  // On mount, load key from localStorage
+  useEffect(() => {
+    const savedKey = localStorage.getItem('zephy-single-encryption-key')
+    if (savedKey) {
+      setEncryptionKey(savedKey)
+      setPendingKey(savedKey)
+    }
+  }, [])
+
+  // Save key to localStorage on change
+  useEffect(() => {
+    if (encryptionKey) localStorage.setItem('zephy-single-encryption-key', encryptionKey)
+  }, [encryptionKey])
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/auth")
+    }
+  }, [user, loading, router])
+
+  // Enhanced socket connection
+  useEffect(() => {
+    if (user) {
+      setConnectionStatus('connecting')
+      
+      const newSocket = io(process.env.NEXT_PUBLIC_CHAT_SERVER_URL || 'http://localhost:3001', {
+        auth: {
+          email: (user as any).email,
+          userId: (user as any).id
+        },
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 10000
+      })
+
+      newSocket.on('connect', () => {
+        setConnectionStatus('connected')
+        console.log('✅ Connected to chat server')
+        toast.success("Connected to chat server")
+      })
+
+      newSocket.on('disconnect', () => {
+        setConnectionStatus('disconnected')
+        console.log('❌ Disconnected from chat server')
+        toast.error("Disconnected from chat server")
+      })
+
+      newSocket.on('connect_error', (error) => {
+        setConnectionStatus('error')
+        console.log('❌ Connection error:', error)
+        toast.error(`Connection failed: ${error.message}`)
+      })
+
+      newSocket.on('reconnect', () => {
+        setConnectionStatus('connected')
+        console.log('✅ Reconnected to chat server')
+        toast.success("Reconnected to chat server")
+      })
+
+      newSocket.on('user_connected', (data: { email: string }) => {
+        console.log('👤 User connected:', data.email)
+        setConnections(prev => 
+          prev.map(conn => 
+            conn.email === data.email 
+              ? { ...conn, isOnline: true }
+              : conn
+          )
+        )
+      })
+
+      newSocket.on('user_disconnected', (data: { email: string }) => {
+        console.log('👤 User disconnected:', data.email)
+        setConnections(prev => 
+          prev.map(conn => 
+            conn.email === data.email 
+              ? { ...conn, isOnline: false, lastSeen: new Date() }
+              : conn
+          )
+        )
+      })
+
+      newSocket.on('message_received', async (message: Message) => {
+        console.log('📨 Message received:', message)
+        
+        // Always try to decrypt if the message is encrypted
+        if (message.encrypted && message.type === 'encrypted_text' && message.content) {
+          try {
+            console.log('🔓 Attempting to decrypt message with key:', encryptionKey)
+            const decryptedContent = await decryptText(message.content, encryptionKey)
+            console.log('✅ Message decrypted successfully:', decryptedContent)
+            
+            // Show decrypted content to user
+            setMessages(prev => [...prev, {
+              ...message,
+              content: decryptedContent,
+              decrypted: true
+            }])
+            return
+          } catch (err) {
+            console.log('❌ Decryption failed:', err)
+            // Show encrypted message with error
+            setMessages(prev => [...prev, { 
+              ...message, 
+              content: "[Encrypted message - decryption failed]",
+              decrypted: false 
+            }])
+            toast.error("Failed to decrypt message")
+            return
+          }
+        }
+        
+        // Handle plain text messages
+        console.log('📝 Adding plain message to chat')
+        setMessages(prev => [...prev, message])
+      })
+
+      newSocket.on('file_received', async (message: Message) => {
+        console.log('📁 File received:', message)
+        
+        // Always try to decrypt if the file is encrypted
+        if (message.encrypted && message.type === 'encrypted_file' && message.fileUrl) {
+          try {
+            console.log('🔓 Attempting to decrypt file with key:', encryptionKey)
+            
+            // Convert base64 to Blob
+            const base64 = message.fileUrl.split(',')[1]
+            const byteCharacters = atob(base64)
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            const blob = new Blob([byteArray], { type: 'application/octet-stream' })
+            const file = new File([blob], message.fileName || 'encrypted_file.enc', { type: 'application/octet-stream' })
+            
+            const result = await decryptFile(file, encryptionKey)
+            const decryptedUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onload = () => resolve(reader.result as string)
+              reader.onerror = reject
+              reader.readAsDataURL(result.blob)
+            })
+            
+            console.log('✅ File decrypted successfully:', result.originalName)
+            
+            // Show decrypted file to user
+            setMessages(prev => [...prev, {
+              ...message,
+              fileUrl: decryptedUrl,
+              fileName: result.originalName,
+              decrypted: true
+            }])
+            toast.success(`Received decrypted file: ${result.originalName}`)
+            return
+          } catch (err) {
+            console.log('❌ File decryption failed:', err)
+            // Show encrypted file with error
+            setMessages(prev => [...prev, { 
+              ...message, 
+              content: `[Encrypted file - decryption failed: ${message.fileName}]`,
+              decrypted: false 
+            }])
+            toast.error("Failed to decrypt file")
+            return
+          }
+        }
+        
+        // Handle plain files
+        console.log('📁 Adding plain file to chat')
+        setMessages(prev => [...prev, message])
+        toast.success(`Received file: ${message.fileName}`)
+      })
+
+      newSocket.on('connection_established', (connection: ChatConnection) => {
+        console.log('🤝 Connection established with:', connection.email)
+        setConnections(prev => [...prev, connection])
+        toast.success(`Connected with ${connection.email}`)
+      })
+
+      setSocket(newSocket)
+
+      return () => {
+        newSocket.close()
+      }
+    }
+  }, [user, encryptionKey])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const connectToUser = async () => {
+    if (!connectingEmail || !socket || !encryptionKey) return
+    setIsConnecting(true)
+    try {
+      socket.emit('connect_to_user', { targetEmail: connectingEmail })
+      setConnectingEmail("")
+    } catch (error) {
+      toast.error("Failed to connect to user")
+    } finally {
+      setIsConnecting(false)
+    }
+  }
+
+  const disconnectFromUser = async () => {
+    if (!selectedConnection || !socket) return
+
+    try {
+      // Remove the connection from local state
+      setConnections(prev => prev.filter(conn => conn.id !== selectedConnection.id))
+      setSelectedConnection(null)
+      setMessages([])
+      
+      // Emit disconnect event to server (if needed)
+      socket.emit('disconnect_from_user', { targetEmail: selectedConnection.email })
+      
+      toast.success(`Disconnected from ${selectedConnection.email}`)
+    } catch (error) {
+      toast.error("Failed to disconnect from user")
+    }
+  }
+
+  // Enhanced sendMessage with robust key validation
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedConnection || !socket) return
+
+    console.log('📤 Sending message to:', selectedConnection.email)
+    console.log('🔐 Encryption enabled:', encryptionKey)
+    console.log('🔑 Selected key:', encryptionKey)
+
+    let content = newMessage
+    let type: 'text' | 'encrypted_text' = 'text'
+    let encrypted = false
+    let encryptionKeyId = undefined
+
+    // Always encrypt if encryption is enabled
+    if (encryptionKey) {
+      try {
+        console.log('🔓 Encrypting message with key:', encryptionKey)
+        console.log('🔑 Key details:', { key: encryptionKey })
+        content = await encryptText(newMessage, encryptionKey)
+        type = 'encrypted_text'
+        encrypted = true
+        encryptionKeyId = encryptionKey
+        console.log('✅ Message encrypted successfully')
+        console.log('📤 Sending with encryption key id:', encryptionKeyId)
+      } catch (error) {
+        console.log('❌ Encryption failed:', error)
+        toast.error("Failed to encrypt message, sending as plain text")
+        // Continue with plain text
+      }
+    }
+
+    const message: Message = {
+      id: Date.now().toString(),
+      sender: (user as any).email,
+      content,
+      timestamp: new Date(),
+      type,
+      encrypted,
+      encryptionKeyId
+    }
+
+    console.log('📤 Emitting message:', message)
+    socket.emit('send_message', {
+      targetEmail: selectedConnection.email,
+      message
+    })
+
+    // Add the original plain text message to the chat for the sender
+    setMessages(prev => [...prev, {
+      ...message,
+      content: newMessage, // Show plain text to sender
+      decrypted: true
+    }])
+    setNewMessage("")
+  }
+
+  // Enhanced sendFile with robust key validation
+  const sendFile = async (file: File) => {
+    if (!selectedConnection || !socket) return
+
+    console.log('📁 Sending file to:', selectedConnection.email)
+    console.log('🔐 Encryption enabled:', encryptionKey)
+    console.log('🔑 Selected key:', encryptionKey)
+
+    setIsUploadingFile(true)
+
+    try {
+      let fileData: string
+      let encrypted = false
+      let encryptionKeyId: string | undefined = undefined
+      let fileName = file.name
+      let type: 'file' | 'encrypted_file' = 'file'
+
+      // Always encrypt if encryption is enabled
+      if (encryptionKey) {
+        try {
+          console.log('🔓 Encrypting file with key:', encryptionKey)
+          const result = await encryptFile(file, encryptionKey)
+          fileData = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result as string)
+            reader.onerror = reject
+            reader.readAsDataURL(result.blob)
+          })
+          encrypted = true
+          encryptionKeyId = encryptionKey
+          const baseName = file.name.replace(/\.[^/.]+$/, "")
+          fileName = baseName + ".enc"
+          type = 'encrypted_file'
+          console.log('✅ File encrypted successfully')
+        } catch (error) {
+          console.log('❌ File encryption failed:', error)
+          toast.error("Failed to encrypt file, sending as plain file")
+          // Continue with plain file
+          fileData = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = (e) => resolve(e.target?.result as string)
+            reader.onerror = reject
+            reader.readAsDataURL(file)
+          })
+        }
+      } else {
+        fileData = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = (e) => resolve(e.target?.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
+        })
+      }
+
+      const message: Message = {
+        id: Date.now().toString(),
+        sender: (user as any).email,
+        content: `File: ${file.name}`,
+        timestamp: new Date(),
+        type,
+        fileName,
+        fileUrl: fileData,
+        encrypted,
+        encryptionKeyId
+      }
+
+      console.log('📁 Emitting file:', message)
+      socket.emit('send_file', {
+        targetEmail: selectedConnection.email,
+        message
+      })
+
+      // Add the original file message to the chat for the sender
+      setMessages(prev => [...prev, {
+        ...message,
+        fileName: file.name, // Show original filename to sender
+        decrypted: true
+      }])
+      toast.success("File sent successfully")
+    } catch (error) {
+      console.log('❌ File send failed:', error)
+      toast.error("Failed to send file")
+    } finally {
+      setIsUploadingFile(false)
+    }
+  }
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        toast.error(`File is too large. Max allowed size is ${MAX_FILE_SIZE_MB}MB.`)
+        return
+      }
+      sendFile(file)
+    }
+  }
+
+  const downloadFile = (fileUrl: string, fileName: string) => {
+    const link = document.createElement('a')
+    link.href = fileUrl
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    toast.success("File downloaded successfully")
+  }
+
+  const getConnectionStatusIcon = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return <Wifi className="h-4 w-4 text-green-400" />
+      case 'connecting':
+        return <RefreshCw className="h-4 w-4 text-yellow-400 animate-spin" />
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-400" />
+      default:
+        return <WifiOff className="h-4 w-4 text-gray-400" />
+    }
+  }
+
+  const getConnectionStatusText = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return 'Connected'
+      case 'connecting':
+        return 'Connecting...'
+      case 'error':
+        return 'Connection Error'
+      default:
+        return 'Disconnected'
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
+  }
+
+  return (
+    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px]" />
+
+      <Header />
+
+      <main className="container py-20">
+        <MotionDiv initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          <div className="mb-8 text-center">
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              {...{ className: "text-4xl font-light tracking-tight mb-4" }}
+            >
+              Secure Chat & File Sharing
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              {...{ className: "text-lg text-white/60 font-light" }}
+            >
+              End-to-end encrypted messaging and file sharing with advanced key management
+            </motion.p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {/* Connection Panel */}
+            <Card className="bg-white/5 border-white/10 backdrop-blur-sm lg:col-span-1">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Connections
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getConnectionStatusIcon()}
+                    <Badge variant="secondary" className={
+                      connectionStatus === 'connected' ? "bg-green-500/20 text-green-400" :
+                      connectionStatus === 'connecting' ? "bg-yellow-500/20 text-yellow-400" :
+                      connectionStatus === 'error' ? "bg-red-500/20 text-red-400" :
+                      "bg-gray-500/20 text-gray-400"
+                    }>
+                      {getConnectionStatusText()}
+                    </Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Enter email to connect"
+                    value={connectingEmail}
+                    onChange={(e) => setConnectingEmail(e.target.value)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                  />
+                  <Button 
+                    onClick={connectToUser}
+                    disabled={!connectingEmail || isConnecting || connectionStatus !== 'connected' || !encryptionKey}
+                    className="w-full"
+                  >
+                    {isConnecting ? "Connecting..." : <><Plus className="h-4 w-4 mr-2" />Connect</>}
+                  </Button>
+                </div>
+
+                <Separator className="bg-white/10" />
+
+                <ScrollArea className="h-64">
+                  <div className="space-y-2">
+                    {connections.length === 0 ? (
+                      <p className="text-white/40 text-sm text-center py-4">
+                        No connections yet. Add someone by email to start chatting.
+                      </p>
+                    ) : (
+                      connections.map((connection) => (
+                        <div
+                          key={connection.id}
+                          className={`p-3 rounded-lg transition-all ${
+                            selectedConnection?.id === connection.id
+                              ? 'bg-white/20 border border-white/20'
+                              : 'bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div 
+                              className="flex items-center gap-2 cursor-pointer flex-1"
+                              onClick={() => setSelectedConnection(connection)}
+                            >
+                              <User className="h-4 w-4" />
+                              <span className="text-sm font-medium">{connection.email}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {connection.isOnline ? (
+                                <div className="w-2 h-2 bg-green-400 rounded-full" />
+                              ) : (
+                                <div className="w-2 h-2 bg-gray-400 rounded-full" />
+                              )}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  // Disconnect from this specific user
+                                  setConnections(prev => prev.filter(conn => conn.id !== connection.id))
+                                  if (selectedConnection?.id === connection.id) {
+                                    setSelectedConnection(null)
+                                    setMessages([])
+                                  }
+                                  socket?.emit('disconnect_from_user', { targetEmail: connection.email })
+                                  toast.success(`Disconnected from ${connection.email}`)
+                                }}
+                                className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Chat Panel */}
+            <Card className="bg-white/5 border-white/10 backdrop-blur-sm lg:col-span-3">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5" />
+                    {selectedConnection ? `Chat with ${selectedConnection.email}` : 'Select a connection to start chatting'}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectedConnection && (
+                      <Badge variant="secondary" className={selectedConnection.isOnline ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}>
+                        {selectedConnection.isOnline ? 'Online' : 'Offline'}
+                      </Badge>
+                    )}
+                    {selectedConnection && (
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={disconnectFromUser}
+                        className="border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                      >
+                        <WifiOff className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="border-white/20 text-white/60 hover:text-white">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-black/90 border-white/10 text-white max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2">
+                            <Shield className="h-5 w-5" />
+                            Encryption Settings
+                          </DialogTitle>
+                          <DialogDescription className="text-white/60">
+                            Manage encryption keys and settings for secure communication
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-6">
+                          {/* Key Input */}
+                          <div className="w-full flex flex-col md:flex-row items-center gap-2 bg-black/80 border-b border-white/10 p-4">
+                            <Input
+                              type="text"
+                              value={pendingKey}
+                              onChange={e => setPendingKey(e.target.value)}
+                              placeholder="Enter or generate encryption key"
+                              className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                            />
+                            <Button
+                              onClick={() => setPendingKey(generateSecureKey(32))}
+                              variant="outline"
+                              className="border-white/20 text-white/60 hover:text-white"
+                            >
+                              Generate Key
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setEncryptionKey(pendingKey)
+                                toast.success('Encryption key applied!')
+                              }}
+                              variant="default"
+                              className="bg-blue-600 text-white hover:bg-blue-700"
+                              disabled={!pendingKey || pendingKey === encryptionKey}
+                            >
+                              Apply Key
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {selectedConnection ? (
+                  <>
+                    <ScrollArea className="h-96 border border-white/10 rounded-lg p-4">
+                      <div className="space-y-4">
+                        {messages.length === 0 ? (
+                          <p className="text-white/40 text-sm text-center py-8">
+                            No messages yet. Start the conversation!
+                          </p>
+                        ) : (
+                          messages.map((message) => {
+                            const isSender = message.sender === (user as any).email;
+                            const initials = message.sender
+                              ? message.sender.split("@")[0].slice(0, 2).toUpperCase()
+                              : "U";
+                            return (
+                              <div
+                                key={message.id}
+                                className={`flex ${isSender ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div className={`flex items-end gap-2 max-w-xs lg:max-w-md ${isSender ? 'flex-row-reverse' : ''}`}>
+                                  {/* Avatar/Initials */}
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${isSender ? 'bg-blue-600' : 'bg-gray-700'}`}>{initials}</div>
+                                  {/* Chat Bubble */}
+                                  <div className={`p-3 rounded-2xl shadow-md ${isSender ? 'bg-blue-500/80 text-white' : 'bg-white/10 text-white'} relative`}>
+                                    {/* Message Content */}
+                                    <div className="text-sm break-words">
+                                      {/* --- Modern File Bubble --- */}
+                                      {message.type === 'file' || message.type === 'encrypted_file' ? (
+                                        <div className="flex items-center gap-3">
+                                          <FileIcon className="h-5 w-5 text-blue-400 flex-shrink-0" />
+                                          <span className="truncate max-w-[120px]" title={message.fileName}>{message.fileName}</span>
+                                          {message.decrypted === false ? (
+                                            <span className="text-xs text-red-400 ml-2">{message.content || 'Decryption failed'}</span>
+                                          ) : message.fileUrl ? (
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="border-blue-400/30 text-blue-400 hover:bg-blue-500/10 ml-2"
+                                              onClick={() => downloadFile(message.fileUrl!, message.fileName!)}
+                                            >
+                                              <Download className="h-4 w-4 mr-1" />
+                                              Download
+                                            </Button>
+                                          ) : (
+                                            <span className="text-xs text-white/40 ml-2">Decrypting...</span>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <span>{message.content}</span>
+                                      )}
+                                    </div>
+                                    {/* Timestamp */}
+                                    <div className="text-xs text-white/60 mt-1 text-right">
+                                      {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    </ScrollArea>
+
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploadingFile}
+                        className="border-white/20 text-white/60 hover:text-white"
+                        title={`Attach file (max ${MAX_FILE_SIZE_MB}MB)`}
+                      >
+                        {isUploadingFile ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
+                          <Paperclip className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                      <div className="flex-1 relative">
+                        <Textarea
+                          placeholder={encryptionKey ? "Type your encrypted message..." : "Type your message..."}
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+                          className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none pr-12"
+                          rows={1}
+                        />
+                        {encryptionKey && (
+                          <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                            <Lock className="h-4 w-4 text-blue-400" />
+                          </div>
+                        )}
+                      </div>
+                      <Button onClick={sendMessage} disabled={!newMessage.trim()}>
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-96">
+                    <div className="text-center">
+                      <MessageCircle className="h-16 w-16 text-white/20 mx-auto mb-4" />
+                      <p className="text-white/40">Select a connection from the left panel to start chatting</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </MotionDiv>
+      </main>
+
+      {/* QR Code Dialog */}
+      <Dialog open={showQrCode} onOpenChange={setShowQrCode}>
+        <DialogContent className="bg-black/90 border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              Share Key via QR Code
+            </DialogTitle>
+            <DialogDescription className="text-white/60">
+              Scan this QR code to import the encryption key on another device
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center">
+            {qrCodeDataUrl && (
+              <img src={qrCodeDataUrl} alt="QR Code" className="border border-white/20 rounded-lg" />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clipboard Warning */}
+      {showClipboardWarning && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <Alert className="bg-yellow-500/20 border-yellow-500/20 text-yellow-400">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Key copied to clipboard. Remember to clear it for security!
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+    </div>
+  )
+} 
