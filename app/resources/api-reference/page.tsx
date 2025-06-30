@@ -1,5 +1,5 @@
 import React from 'react'
-import { Code, Zap, FileText, CheckCircle, BookOpen, Shield, Database, Globe, Cpu, Lock, Activity, Users, Terminal, GitBranch, Cloud } from 'lucide-react'
+import { Code, Zap, FileText, CheckCircle, BookOpen, Shield, Database, Globe, Cpu, Lock, Activity, Users, Terminal, GitBranch, Cloud, Clock } from 'lucide-react'
 
 const features = [
   {
@@ -130,6 +130,40 @@ export default function APIReferencePage() {
             <p className="text-lg text-white/60 max-w-2xl mx-auto">
               Comprehensive documentation, interactive examples, and dedicated support to accelerate your development.
             </p>
+          </div>
+
+          {/* Coming Soon Section */}
+          <div className="text-center mb-16 bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border border-yellow-500/30 rounded-2xl p-12">
+            <div className="flex justify-center mb-6">
+              <div className="p-4 bg-yellow-900/30 rounded-full">
+                <Clock className="w-12 h-12 text-yellow-400" />
+              </div>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-yellow-400">
+              API via ZEPHYRN Coming Soon
+            </h2>
+            <p className="text-xl text-white/80 mb-6 max-w-3xl mx-auto">
+              We're building the next generation of APIs powered by ZEPHYRN technology. Get ready for unprecedented performance, security, and developer experience.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <span className="px-6 py-3 bg-yellow-600/20 border border-yellow-500/50 rounded-lg text-yellow-300 font-semibold">
+                🚀 Revolutionary Performance
+              </span>
+              <span className="px-6 py-3 bg-yellow-600/20 border border-yellow-500/50 rounded-lg text-yellow-300 font-semibold">
+                🔒 Enhanced Security
+              </span>
+              <span className="px-6 py-3 bg-yellow-600/20 border border-yellow-500/50 rounded-lg text-yellow-300 font-semibold">
+                ⚡ Lightning Fast
+              </span>
+            </div>
+            <div className="mt-8">
+              <a
+                href="/contact-us"
+                className="inline-block px-8 py-4 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-white font-bold text-lg shadow-lg transition-all duration-300 hover:scale-105"
+              >
+                Join Waitlist
+              </a>
+            </div>
           </div>
 
           {/* API Metrics */}
