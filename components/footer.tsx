@@ -12,7 +12,7 @@ export default function Footer() {
 
   const solutions = ["Enterprise Security", "Cloud Protection", "Threat Intelligence", "Compliance Management"]
   const company = [
-    { name: "About", href: "/about" },
+    { name: "About", href: "/solutions" },
     { name: "Leadership", href: "/leadership" },
     { name: "Careers", href: "/careers" },
     { name: "Press", href: "/press" },
