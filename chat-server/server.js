@@ -8,14 +8,20 @@ const server = http.createServer(app);
 
 // Configure CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: [
+    "https://www.zephyrnsecurities.com", // production
+    "http://localhost:3000"              // local dev (optional)
+  ],
   credentials: true
 }));
 
 // Configure Socket.IO with CORS
 const io = socketIo(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: [
+      "https://www.zephyrnsecurities.com",
+      "http://localhost:3000"
+    ],
     methods: ["GET", "POST"],
     credentials: true
   },
