@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check, Zap, FileText, Lock, Unlock, Clock, Calendar, ArrowUpRight } from "lucide-react"
+import { Check, Zap, FileText, Lock, Unlock, Clock, Calendar, ArrowUpRight, Shield, Crown, Building, ArrowRight } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useMotionValueEvent, animate } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -12,80 +12,90 @@ import Header from "@/components/header"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipProvider } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
-
-// Create properly typed motion components
-const MotionDiv = motion.div
-const MotionMain = motion.main
-const MotionSection = motion.section
-const MotionH1 = motion.h1
-const MotionP = motion.p
-const MotionSpan = motion.span
-const MotionLi = motion.li
+import { MotionDiv, MotionH1, MotionP } from "@/components/motion"
 
 const plans = [
   {
-    name: "Free",
-    price: "$0",
-    description: "Perfect for trying out Zephyr",
+    id: "free",
+    name: "Starter",
+    price: 0,
+    priceDisplay: "$0",
+    period: "forever",
+    description: "Essential security for small teams",
+    icon: Shield,
+    popular: false,
     features: [
-      "5 encryptions per day",
-      "Max file size: 10MB",
-      "Basic encryption algorithms",
-      "Email support"
+      "File upload limit: 100 MB per file",
+      "Daily encryption limit: 3 files",
+      "Daily decryption limit: 3 files",
+      "Any type of file supported",
+      "Basic AES-256 encryption",
+      "Email support",
     ],
-    maxFileSize: "10MB",
-    dailyLimit: 5,
-    badge: ""
   },
   {
-    name: "Pro",
-    price: "$9.99",
-    description: "Ideal for individuals and small teams",
+    id: "standard",
+    name: "Professional",
+    price: 19.99,
+    priceDisplay: "$19.99",
+    period: "per month",
+    description: "Advanced security for growing businesses",
+    icon: Zap,
+    popular: true,
     features: [
-      "50 encryptions per day",
-      "Max file size: 100MB",
-      "Advanced encryption algorithms",
-      "Priority email support",
-      "No watermarks"
-    ],
-    maxFileSize: "100MB",
-    dailyLimit: 50,
-    badge: "POPULAR"
-  },
-  {
-    name: "Business",
-    price: "$24.99",
-    description: "Perfect for small businesses",
-    features: [
-      "Unlimited encryptions",
-      "Max file size: 500MB",
-      "Enterprise-grade encryption",
-      "24/7 priority support",
+      "File upload limit: 1 GB per file",
+      "Daily encryption limit: 50 files",
+      "Daily decryption limit: 50 files",
+      "Any type of file supported",
+      "Advanced AES-256 encryption",
+      "Priority support",
+      "Encryption analytics",
       "API access",
-      "Team management"
     ],
-    maxFileSize: "500MB",
-    dailyLimit: -1,
-    badge: ""
   },
   {
+    id: "professional",
     name: "Enterprise",
-    price: "Custom",
-    description: "For large organizations with custom needs",
+    price: 89.99,
+    priceDisplay: "$89.99",
+    period: "per month",
+    description: "Complete security for large organizations",
+    icon: Crown,
+    popular: false,
     features: [
-      "Unlimited everything",
-      "Custom file size limits",
-      "Custom encryption algorithms",
-      "Dedicated support team",
-      "Custom API integration",
+      "File upload limit: 10 GB per file",
+      "Daily encryption limit: Unlimited",
+      "Daily decryption limit: Unlimited",
+      "Advanced threat detection",
+      "Military-grade encryption",
+      "24/7 dedicated support",
       "Advanced analytics",
-      "SLA guarantee"
+      "Custom integrations",
+      "Compliance reporting",
     ],
-    maxFileSize: "Custom",
-    dailyLimit: -1,
-    badge: "ENTERPRISE"
-  }
-]
+  },
+  {
+    id: "enterprise",
+    name: "Global",
+    price: 0,
+    priceDisplay: "Custom",
+    period: "contact us",
+    description: "Tailored solutions for global enterprises",
+    icon: Building,
+    popular: false,
+    features: [
+      "Unlimited file upload size",
+      "Unlimited daily operations",
+      "Custom deployment",
+      "Dedicated infrastructure",
+      "White-label solutions",
+      "SLA guarantees",
+      "Custom security protocols",
+      "On-premise deployment",
+      "Global compliance",
+    ],
+  },
+];
 
 // Mock data for usage history - In production, this would come from your backend
 const mockUsageHistory: Record<string, { type: string; fileName: string; timestamp: string; size: string }[]> = {
@@ -133,6 +143,7 @@ const GlowingCard = ({ children, className, glowColor = "white" }: { children: R
 const AnimatedNumber = ({ value, className }: { value: number | string; className?: string }) => {
   const count = useMotionValue(0)
   const rounded = useTransform(count, (latest) => Math.round(latest))
+  const [display, setDisplay] = useState(0)
 
   useEffect(() => {
     const controls = animate(count, typeof value === 'number' ? value : parseFloat(value as string), {
@@ -142,7 +153,12 @@ const AnimatedNumber = ({ value, className }: { value: number | string; classNam
     return controls.stop
   }, [value, count])
 
-  return <MotionSpan className={className}>{rounded}</MotionSpan>
+  useEffect(() => {
+    const unsubscribe = rounded.on("change", (v) => setDisplay(v))
+    return unsubscribe
+  }, [rounded])
+
+  return <p className={className}>{display}</p>
 }
 
 export default function PlatformPage() {
@@ -247,30 +263,16 @@ export default function PlatformPage() {
     return null
   }
 
-  const handleUpgrade = async (planName: string) => {
-    setIsUpgrading(true)
-    try {
-      // Here you would integrate with your payment provider (e.g., Stripe)
-      // and handle the subscription change
-      console.log(`Upgrading to ${planName}`)
-      
-      // For enterprise, redirect to contact page
-      if (planName === "Enterprise") {
-        router.push("/contact-us")
-        return
-      }
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Show success message or redirect to payment
-      alert("This is a demo. In production, this would redirect to payment.")
-    } catch (error) {
-      console.error("Error upgrading plan:", error)
-      alert("Error upgrading plan. Please try again.")
-    } finally {
-      setIsUpgrading(false)
+  const handleUpgrade = (planId: string) => {
+    if (planId === "enterprise") {
+      window.open("https://calendly.com/zephyrn-securities/30min", "_blank");
+      return;
     }
+    if (planId === "free") {
+      // No upgrade for free plan
+      return;
+    }
+    router.push(`/payment?plan=${planId}`);
   }
 
   const formatTimestamp = (timestamp: string) => {
@@ -321,105 +323,71 @@ export default function PlatformPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 mb-20"
         >
           {plans.map((plan, index) => (
             <motion.div
-              key={plan.name}
+              key={plan.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 * index }}
-              whileHover={{ 
-                scale: 1.02,
-                transition: { duration: 0.2 }
-              }}
-              onHoverStart={() => setHoveredCard(plan.name)}
-              onHoverEnd={() => setHoveredCard(null)}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              className="relative"
             >
-              <GlowingCard
-                className={cn(
-                  "h-full transition-all duration-300",
-                  hoveredCard === plan.name && "shadow-2xl"
-                )}
+              {plan.popular && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                  <Badge className="bg-white text-black px-4 py-1 font-medium">Most Popular</Badge>
+                </div>
+              )}
+              <Card
+                className={`bg-black border-0 hover:bg-white/5 transition-all duration-500 h-full rounded-none ${
+                  plan.popular ? "ring-1 ring-white/20" : ""
+                }`}
               >
-                <Card className="relative overflow-hidden border-0 bg-transparent">
-                  {plan.badge && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.1 * index }}
-                      className="absolute -top-3 -right-3 z-10"
-                    >
-                      <div className="bg-white text-black px-4 py-1.5 text-sm font-medium rounded-full shadow-lg">
-                        {plan.badge}
-                      </div>
-                    </motion.div>
-                  )}
-                  <CardHeader className="space-y-4">
-                    <div className="space-y-2">
-                      <CardTitle className="text-2xl font-light text-white">{plan.name}</CardTitle>
-                      <div className="flex items-baseline space-x-1">
-                        <motion.span
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.3, delay: 0.2 * index }}
-                          className="text-3xl font-light text-white"
-                        >
-                          {plan.price}
-                        </motion.span>
-                        {plan.price !== "Custom" && (
-                          <motion.span
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.3, delay: 0.2 * index + 0.1 }}
-                            className="text-white/40"
-                          >
-                            /month
-                          </motion.span>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-white/60 text-sm leading-relaxed">{plan.description}</p>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-3 text-left text-white/80">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-center">
-                          <Check className="w-4 h-4 mr-3 text-green-400" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </div>
-                    {plan.name === "Enterprise" ? (
-                      <a
-                        href="https://calendly.com/zephyrn-securities/30min"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(
-                          "w-full mt-8 py-6 text-lg font-bold transition-all duration-300 rounded-lg flex items-center justify-center",
-                          "bg-white text-black hover:bg-white/90",
-                          plan.badge === "POPULAR" && "bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:opacity-90"
-                        )}
-                        style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
+                <CardHeader className="text-center p-12">
+                  <div className="p-4 bg-white/10 w-fit mx-auto mb-6">
+                    <plan.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <CardTitle className="text-2xl font-light text-white mb-4">{plan.name}</CardTitle>
+                  <div className="text-center mb-4">
+                    <span className="text-4xl font-light text-white">{plan.priceDisplay}</span>
+                    {plan.priceDisplay !== "Custom" && <span className="text-white/60 ml-2 font-light">/{plan.period}</span>}
+                  </div>
+                  <CardDescription className="text-white/60 font-light">{plan.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8 p-12 pt-0">
+                  <ul className="space-y-4">
+                    {plan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-start space-x-3">
+                        <div className="w-1 h-1 bg-white/60 rounded-full mt-3 flex-shrink-0" />
+                        <span className="text-white/80 text-sm font-light">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="pt-4">
+                    {plan.id === "enterprise" ? (
+                      <Button
+                        onClick={() => handleUpgrade(plan.id)}
+                        className="w-full bg-white text-black hover:bg-white/90 font-medium rounded-none"
                       >
-                        Contact Sales
-                      </a>
+                        <Calendar className="w-4 h-4 mr-2" />
+                        Schedule Call
+                      </Button>
                     ) : (
                       <Button
-                        onClick={() => handleUpgrade(plan.name)}
-                        disabled={isUpgrading}
-                        className={cn(
-                          "w-full mt-8 py-6 text-lg font-bold transition-all duration-300 rounded-lg",
-                          "bg-white text-black hover:bg-white/90",
-                          plan.badge === "POPULAR" && "bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:opacity-90"
-                        )}
+                        onClick={() => handleUpgrade(plan.id)}
+                        className={`w-full font-medium rounded-none ${
+                          plan.popular
+                            ? "bg-white text-black hover:bg-white/90"
+                            : "bg-white/10 text-white hover:bg-white/20"
+                        }`}
                       >
-                        {isUpgrading ? "Processing..." : `Upgrade to ${plan.name}`}
+                        {plan.id === "free" ? "Get Started Free" : "Upgrade"}
+                        <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                     )}
-                  </CardContent>
-                </Card>
-              </GlowingCard>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           ))}
         </motion.div>
@@ -483,7 +451,7 @@ export default function PlatformPage() {
                     <TabsTrigger value="month" onClick={() => setActiveTab("month")} className="text-white/60 data-[state=active]:bg-white/10 data-[state=active]:text-white rounded-lg">This Month</TabsTrigger>
                   </TabsList>
                   <AnimatePresence mode="wait">
-                    <MotionDiv
+                    <motion.div
                       key={activeTab}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -511,7 +479,7 @@ export default function PlatformPage() {
                           <div className="text-center text-white/60 py-8">No operations found for the selected period.</div>
                         )}
                       </ol>
-                    </MotionDiv>
+                    </motion.div>
                   </AnimatePresence>
                 </Tabs>
               </div>
@@ -545,17 +513,17 @@ export default function PlatformPage() {
                 {[
                   {
                     title: "Encryptions Today",
-                    value: `${mockUsageHistory.today.length} / ${plans.find(p => p.name === currentPlan)?.dailyLimit || "∞"}`,
+                    value: `${mockUsageHistory.today.length} / ${plans.find(p => p.id === currentPlan)?.features.find(f => f.includes("encryptions"))?.split(" ")[2] || "∞"}`,
                     icon: Lock
                   },
                   {
                     title: "Max File Size",
-                    value: plans.find(p => p.name === currentPlan)?.maxFileSize || "10MB",
+                    value: plans.find(p => p.id === currentPlan)?.features.find(f => f.includes("file"))?.split(" ")[2] || "10MB",
                     icon: FileText
                   },
                   {
                     title: "Days Remaining",
-                    value: currentPlan === "Free" ? "∞" : "30",
+                    value: currentPlan === "free" ? "∞" : "30",
                     icon: Clock
                   }
                 ].map((limit, index) => (
