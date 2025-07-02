@@ -133,14 +133,14 @@ export default function ChatPage() {
       const newSocket = io(
         process.env.NEXT_PUBLIC_CHAT_SERVER_URL || 'https://chat.zephyrnsecurities.com',
         {
-          auth: {
-            email: (user as any).email,
-            userId: (user as any).id
-          },
-          reconnection: true,
-          reconnectionAttempts: 5,
-          reconnectionDelay: 1000,
-          timeout: 10000
+        auth: {
+          email: (user as any).email,
+          userId: (user as any).id
+        },
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 10000
         }
       )
 

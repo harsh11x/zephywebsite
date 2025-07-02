@@ -12,7 +12,8 @@ import Header from "@/components/header"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipProvider } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
-import { MotionDiv, MotionH1, MotionP } from "@/components/motion"
+import { MotionDivWrapper, MotionH1, MotionP } from "@/components/motion"
+import { useCurrency } from "@/contexts/currency-context"
 
 const plans = [
   {
@@ -180,6 +181,29 @@ export default function PlatformPage() {
   const cardScale = useTransform(smoothProgress, [0, 0.5], [1, 0.95])
   const cardOpacity = useTransform(smoothProgress, [0, 0.5], [1, 0.8])
   const cardY = useTransform(smoothProgress, [0, 0.5], [0, 50])
+
+  const { currency, rates } = useCurrency()
+
+  function getCurrencySymbol(code: string) {
+    const map: Record<string, string> = {
+      USD: "$",
+      INR: "₹",
+      EUR: "€",
+      GBP: "£",
+      AUD: "A$",
+      CAD: "C$",
+      SGD: "S$",
+    }
+    return map[code] || code + " "
+  }
+
+  function formatPrice(usd: number, display: string) {
+    if (display === "Custom" || usd === 0) return display
+    if (currency === "USD") return `$${usd}`
+    const rate = rates[currency] || 1
+    const converted = (usd * rate).toLocaleString(undefined, { maximumFractionDigits: 2 })
+    return `${getCurrencySymbol(currency)}${converted}`
+  }
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -349,7 +373,7 @@ export default function PlatformPage() {
                   </div>
                   <CardTitle className="text-2xl font-light text-white mb-4">{plan.name}</CardTitle>
                   <div className="text-center mb-4">
-                    <span className="text-4xl font-light text-white">{plan.priceDisplay}</span>
+                    <span className="text-4xl font-light text-white">{formatPrice(plan.price, plan.priceDisplay)}</span>
                     {plan.priceDisplay !== "Custom" && <span className="text-white/60 ml-2 font-light">/{plan.period}</span>}
                   </div>
                   <CardDescription className="text-white/60 font-light">{plan.description}</CardDescription>

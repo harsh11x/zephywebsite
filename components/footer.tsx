@@ -8,6 +8,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { useCurrency, SUPPORTED_CURRENCIES } from "@/contexts/currency-context"
+import { ChevronDown } from "lucide-react"
 
 export default function Footer() {
   const solutions = ["Enterprise Security", "Cloud Protection", "Threat Intelligence", "Compliance Management"]
@@ -33,6 +36,10 @@ export default function Footer() {
   return (
     <footer className="border-t border-white/10 bg-black">
       <div className="container py-12 md:py-20 px-4 sm:px-6 lg:px-8">
+        {/* Currency Selector */}
+        <div className="flex justify-end mb-8">
+          <CurrencySelector />
+        </div>
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-2 space-y-6">
             <Link href="/" className="flex items-center space-x-3">
@@ -172,5 +179,38 @@ export default function Footer() {
         </div>
       </div>
     </footer>
+  )
+}
+
+function CurrencySelector() {
+  const { currency, setCurrency, loading } = useCurrency()
+  const current = SUPPORTED_CURRENCIES.find(c => c.code === currency)
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="flex items-center px-4 py-2 bg-white/10 text-white rounded-md hover:bg-white/20 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <span className="mr-2 font-medium">{current ? current.label : currency}</span>
+          <ChevronDown className="w-4 h-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-2 bg-black border-white/10">
+        <div className="font-semibold text-white mb-2">Select Currency</div>
+        <ul className="space-y-1">
+          {SUPPORTED_CURRENCIES.map((c) => (
+            <li key={c.code}>
+              <button
+                className={`w-full text-left px-3 py-2 rounded hover:bg-white/10 text-white/80 ${currency === c.code ? "bg-white/10 font-bold" : ""}`}
+                onClick={() => setCurrency(c.code)}
+                disabled={loading}
+              >
+                {c.label}
+                {currency === c.code && <span className="ml-2 text-xs text-blue-400">(Selected)</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+        {loading && <div className="text-xs text-white/60 mt-2">Updating rates...</div>}
+      </PopoverContent>
+    </Popover>
   )
 }

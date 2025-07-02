@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import Link from "next/link"
+import { CurrencyProvider } from "@/contexts/currency-context"
 
 
 const inter = Inter({ subsets: ["latin"] })
@@ -27,11 +28,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} flex min-h-screen flex-col`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <AuthProvider>
-            <div className="flex-1 flex flex-col">
-              {children}
-            </div>
-          </AuthProvider>
+          <CurrencyProvider>
+            <AuthProvider>
+              <div className="flex-1 flex flex-col">
+                {children}
+              </div>
+            </AuthProvider>
+          </CurrencyProvider>
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />

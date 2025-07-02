@@ -6,21 +6,22 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Shield, Zap, Crown, Building, Calendar, ArrowRight } from "lucide-react"
-import { MotionDiv } from "@/components/motion"
+import { MotionDivWrapper } from "@/components/motion"
 import Link from "next/link"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
+import { useCurrency, SUPPORTED_CURRENCIES } from "@/contexts/currency-context"
 
 export default function PricingPage() {
   const router = useRouter()
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+  const { currency, rates, loading } = useCurrency()
 
   const plans = [
     {
       id: "free",
       name: "Starter",
       price: 0,
-      priceDisplay: "$0",
       period: "forever",
       description: "Essential security for small teams",
       icon: Shield,
@@ -38,7 +39,6 @@ export default function PricingPage() {
       id: "standard",
       name: "Professional",
       price: 19.99,
-      priceDisplay: "$19.99",
       period: "per month",
       description: "Advanced security for growing businesses",
       icon: Zap,
@@ -58,7 +58,6 @@ export default function PricingPage() {
       id: "professional",
       name: "Enterprise",
       price: 89.99,
-      priceDisplay: "$89.99",
       period: "per month",
       description: "Complete security for large organizations",
       icon: Crown,
@@ -79,7 +78,6 @@ export default function PricingPage() {
       id: "enterprise",
       name: "Global",
       price: 0,
-      priceDisplay: "Custom",
       period: "contact us",
       description: "Tailored solutions for global enterprises",
       icon: Building,
@@ -110,6 +108,29 @@ export default function PricingPage() {
     window.open("https://calendly.com/zephyrn-securities/30min", "_blank")
   }
 
+  // Helper to get currency symbol
+  function getCurrencySymbol(code: string) {
+    const map: Record<string, string> = {
+      USD: "$",
+      INR: "₹",
+      EUR: "€",
+      GBP: "£",
+      AUD: "A$",
+      CAD: "C$",
+      SGD: "S$",
+    }
+    return map[code] || code + " "
+  }
+
+  // Helper to format price
+  function formatPrice(usd: number) {
+    if (usd === 0) return "Free"
+    if (currency === "USD") return `$${usd}`
+    const rate = rates[currency] || 1
+    const converted = (usd * rate).toLocaleString(undefined, { maximumFractionDigits: 2 })
+    return `${getCurrencySymbol(currency)}${converted}`
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Subtle grid pattern */}
@@ -118,7 +139,7 @@ export default function PricingPage() {
       <Header />
 
       <main className="container py-16 relative z-10">
-        <MotionDiv initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        <MotionDivWrapper initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           {/* Header Section */}
           <div className="text-center mb-20">
             <Badge className="bg-white/5 text-white/80 border border-white/10 px-4 py-2 mb-8 backdrop-blur-sm">
@@ -145,7 +166,7 @@ export default function PricingPage() {
           {/* Pricing Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 mb-20">
             {plans.map((plan, index) => (
-              <MotionDiv
+              <MotionDivWrapper
                 key={plan.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -168,8 +189,12 @@ export default function PricingPage() {
                     </div>
                     <CardTitle className="text-2xl font-light text-white mb-4">{plan.name}</CardTitle>
                     <div className="text-center mb-4">
-                      <span className="text-4xl font-light text-white">{plan.priceDisplay}</span>
-                      {plan.priceDisplay !== "Custom" && <span className="text-white/60 ml-2 font-light">/{plan.period}</span>}
+                      {loading ? (
+                        <span className="text-4xl font-light text-white animate-pulse">...</span>
+                      ) : (
+                        <span className="text-4xl font-light text-white">{plan.id === "enterprise" ? "Custom" : formatPrice(plan.price)}</span>
+                      )}
+                      {plan.period && <span className="text-white/60 ml-2 font-light">/{plan.period}</span>}
                     </div>
                     <CardDescription className="text-white/60 font-light">{plan.description}</CardDescription>
                   </CardHeader>
@@ -207,12 +232,12 @@ export default function PricingPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </MotionDiv>
+              </MotionDivWrapper>
             ))}
           </div>
 
           {/* Features Comparison */}
-          <MotionDiv
+          <MotionDivWrapper
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -257,10 +282,10 @@ export default function PricingPage() {
                 </div>
               </CardContent>
             </Card>
-          </MotionDiv>
+          </MotionDivWrapper>
 
           {/* FAQ Section */}
-          <MotionDiv
+          <MotionDivWrapper
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -303,8 +328,8 @@ export default function PricingPage() {
                 </Card>
               ))}
             </div>
-          </MotionDiv>
-        </MotionDiv>
+          </MotionDivWrapper>
+        </MotionDivWrapper>
       </main>
 
       <Footer />

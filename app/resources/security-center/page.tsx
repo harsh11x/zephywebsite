@@ -77,10 +77,10 @@ export default function SecurityCenterPage() {
             </h1>
             <p className="text-xl text-white/70 max-w-3xl mx-auto mb-8">
               Zephyrn's Security Center is the nerve center of digital defense, providing real-time monitoring, instant alerts, and actionable insights. Our platform is engineered to detect, respond, and neutralize threats faster and more effectively than any competitor.
-            </p>
+        </p>
             <p className="text-lg text-white/60 max-w-2xl mx-auto">
-              With Zephyrn, you gain total visibility and control, ensuring your organization stays ahead of evolving threats and regulatory demands.
-            </p>
+          With Zephyrn, you gain total visibility and control, ensuring your organization stays ahead of evolving threats and regulatory demands.
+        </p>
           </div>
 
           {/* Security Metrics */}
@@ -154,7 +154,7 @@ export default function SecurityCenterPage() {
               Contact Security Team
             </a>
           </div>
-        </div>
+      </div>
       </main>
     </div>
   )

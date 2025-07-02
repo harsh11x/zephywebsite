@@ -54,55 +54,55 @@ export default function Header() {
         </div>
 
         <nav className="hidden md:flex items-center space-x-10 text-sm font-light">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="relative transition-all duration-300 hover:text-white text-white/60 group py-2"
-            >
-              {item.name}
-              <span className="absolute -bottom-1 left-0 w-0 h-px bg-white group-hover:w-full transition-all duration-300"></span>
-            </Link>
-          ))}
-        </nav>
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="relative transition-all duration-300 hover:text-white text-white/60 group py-2"
+              >
+                {item.name}
+                <span className="absolute -bottom-1 left-0 w-0 h-px bg-white group-hover:w-full transition-all duration-300"></span>
+              </Link>
+            ))}
+          </nav>
 
         <div className="flex items-center">
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                className="mr-2 px-0 text-base hover:bg-white/10 focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
-              >
-                <Menu className="h-6 w-6 text-white" />
-                <span className="sr-only">Toggle Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="pr-0 bg-black border-white/10">
-              <Link href="/" className="flex items-center space-x-3" onClick={() => setIsOpen(false)}>
-                <div className="p-2 bg-white/10">
-                  <Shield className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-light text-white tracking-wide">ZEPHYRN</span>
-                  <span className="text-xs text-white/40 tracking-[0.2em]">SECURITIES</span>
-                </div>
-              </Link>
-              <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
-                <div className="flex flex-col space-y-6">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className="text-white/60 transition-colors hover:text-white py-2 text-lg font-light"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              className="mr-2 px-0 text-base hover:bg-white/10 focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+            >
+              <Menu className="h-6 w-6 text-white" />
+              <span className="sr-only">Toggle Menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="pr-0 bg-black border-white/10">
+            <Link href="/" className="flex items-center space-x-3" onClick={() => setIsOpen(false)}>
+              <div className="p-2 bg-white/10">
+                <Shield className="h-6 w-6 text-white" />
               </div>
-            </SheetContent>
-          </Sheet>
+              <div className="flex flex-col">
+                <span className="font-light text-white tracking-wide">ZEPHYRN</span>
+                <span className="text-xs text-white/40 tracking-[0.2em]">SECURITIES</span>
+              </div>
+            </Link>
+            <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
+              <div className="flex flex-col space-y-6">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setIsOpen(false)}
+                    className="text-white/60 transition-colors hover:text-white py-2 text-lg font-light"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
 
           <div className="hidden md:flex items-center space-x-4">
             {user ? (

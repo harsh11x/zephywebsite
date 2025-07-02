@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Shield, Zap, Crown } from "lucide-react"
+import { useCurrency } from "@/contexts/currency-context"
 
 interface PlanSummaryProps {
   planId: string
@@ -12,7 +13,7 @@ interface PlanSummaryProps {
 const planDetails = {
   free: {
     name: "Starter",
-    price: "$0",
+    price: 0,
     period: "forever",
     icon: Shield,
     features: [
@@ -24,7 +25,7 @@ const planDetails = {
   },
   standard: {
     name: "Professional",
-    price: "$19.99",
+    price: 19.99,
     period: "per month",
     icon: Zap,
     features: [
@@ -37,7 +38,7 @@ const planDetails = {
   },
   professional: {
     name: "Enterprise",
-    price: "$89.99",
+    price: 89.99,
     period: "per month",
     icon: Crown,
     features: [
@@ -50,7 +51,29 @@ const planDetails = {
   },
 }
 
+function getCurrencySymbol(code: string) {
+  const map: Record<string, string> = {
+    USD: "$",
+    INR: "₹",
+    EUR: "€",
+    GBP: "£",
+    AUD: "A$",
+    CAD: "C$",
+    SGD: "S$",
+  }
+  return map[code] || code + " "
+}
+
+function formatPrice(usd: number, currency: string, rates: Record<string, number>) {
+  if (usd === 0) return "Free"
+  if (currency === "USD") return `$${usd}`
+  const rate = rates[currency] || 1
+  const converted = (usd * rate).toLocaleString(undefined, { maximumFractionDigits: 2 })
+  return `${getCurrencySymbol(currency)}${converted}`
+}
+
 export default function PlanSummary({ planId, className }: PlanSummaryProps) {
+  const { currency, rates } = useCurrency()
   const plan = planDetails[planId as keyof typeof planDetails]
 
   if (!plan) return null
@@ -65,7 +88,7 @@ export default function PlanSummary({ planId, className }: PlanSummaryProps) {
         </div>
         <CardTitle className="text-white text-lg">{plan.name} Plan</CardTitle>
         <div className="text-center">
-          <span className="text-2xl font-light text-white">{plan.price}</span>
+          <span className="text-2xl font-light text-white">{formatPrice(plan.price, currency, rates)}</span>
           <span className="text-white/60 ml-1 text-sm">/{plan.period}</span>
         </div>
       </CardHeader>

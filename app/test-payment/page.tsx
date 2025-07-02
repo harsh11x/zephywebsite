@@ -4,10 +4,12 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useCurrency } from "@/contexts/currency-context"
 
 export default function TestPaymentPage() {
   const router = useRouter()
   const [selectedPlan, setSelectedPlan] = useState<string>("")
+  const { currency, rates } = useCurrency()
 
   const testPlans = [
     { id: "free", name: "Free", price: 0 },
@@ -47,6 +49,27 @@ export default function TestPaymentPage() {
     },
   }
 
+  function getCurrencySymbol(code: string) {
+    const map: Record<string, string> = {
+      USD: "$",
+      INR: "₹",
+      EUR: "€",
+      GBP: "£",
+      AUD: "A$",
+      CAD: "C$",
+      SGD: "S$",
+    }
+    return map[code] || code + " "
+  }
+
+  function formatPrice(usd: number) {
+    if (usd === 0) return "Free"
+    if (currency === "USD") return `$${usd}`
+    const rate = rates[currency] || 1
+    const converted = (usd * rate).toLocaleString(undefined, { maximumFractionDigits: 2 })
+    return `${getCurrencySymbol(currency)}${converted}`
+  }
+
   const handleTestPlan = (planId: string) => {
     setSelectedPlan(planId)
     router.push(`/auth?plan=${planId}`)
@@ -67,7 +90,7 @@ export default function TestPaymentPage() {
               className="w-full"
               variant={selectedPlan === plan.id ? "default" : "outline"}
             >
-              {plan.name} - ${plan.price}
+              {plan.name} - {formatPrice(plan.price)}
             </Button>
           ))}
           <div className="mt-4 p-4 bg-white/5 rounded">
