@@ -30,7 +30,12 @@ const io = socketIo(server, {
 
 // Store connected users
 const connectedUsers = new Map(); // socketId -> userData
+const userSockets = new Map(); // email -> Set of socketIds for that user
 const userConnections = new Map(); // email -> Set of connected user emails
+
+// Voice call tracking
+const activeCalls = new Map(); // callId -> callData
+const callStats = new Map(); // email -> stats
 
 // Middleware to authenticate socket connections
 io.use((socket, next) => {
@@ -55,6 +60,12 @@ io.on('connection', (socket) => {
     socketId: socket.id,
     connectedAt: new Date()
   });
+  
+  // Track all sockets for this user
+  if (!userSockets.has(socket.userEmail)) {
+    userSockets.set(socket.userEmail, new Set());
+  }
+  userSockets.get(socket.userEmail).add(socket.id);
   
   // Join user to their personal room
   socket.join(socket.userEmail);
@@ -127,7 +138,7 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Send message to target user
+    // Send message to target user (all their connected devices)
     io.to(targetEmail).emit('message_received', {
       ...message,
       sender: socket.userEmail,
@@ -160,7 +171,7 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Send file to target user
+    // Send file to target user (all their connected devices)
     io.to(targetEmail).emit('file_received', {
       ...message,
       sender: socket.userEmail,
@@ -184,22 +195,163 @@ io.on('connection', (socket) => {
     // Remove from connected users
     connectedUsers.delete(socket.id);
     
-    // Remove from user connections
-    if (userConnections.has(socket.userEmail)) {
-      const connections = userConnections.get(socket.userEmail);
-      connections.forEach(connectedEmail => {
-        const otherUserConnections = userConnections.get(connectedEmail);
-        if (otherUserConnections) {
-          otherUserConnections.delete(socket.userEmail);
-          // Notify the other user about disconnection
-          io.to(connectedEmail).emit('user_disconnected', { email: socket.userEmail });
+    // Remove from user sockets
+    if (userSockets.has(socket.userEmail)) {
+      userSockets.get(socket.userEmail).delete(socket.id);
+      // If this was the last socket for this user, clean up connections
+      if (userSockets.get(socket.userEmail).size === 0) {
+        userSockets.delete(socket.userEmail);
+        
+        // Remove from user connections
+        if (userConnections.has(socket.userEmail)) {
+          const connections = userConnections.get(socket.userEmail);
+          connections.forEach(connectedEmail => {
+            const otherUserConnections = userConnections.get(connectedEmail);
+            if (otherUserConnections) {
+              otherUserConnections.delete(socket.userEmail);
+              // Notify the other user about disconnection
+              io.to(connectedEmail).emit('user_disconnected', { email: socket.userEmail });
+            }
+          });
+          userConnections.delete(socket.userEmail);
         }
-      });
-      userConnections.delete(socket.userEmail);
+        
+        // Notify other users about this user's disconnection
+        socket.broadcast.emit('user_disconnected', { email: socket.userEmail });
+      }
     }
+  });
+
+  // Voice Call Events
+  socket.on('voice_call_request', (data) => {
+    const { targetEmail, offer, publicKey, callerEmail } = data;
     
-    // Notify other users about this user's disconnection
-    socket.broadcast.emit('user_disconnected', { email: socket.userEmail });
+    console.log(`📞 Voice call request from ${callerEmail} to ${targetEmail}`);
+    
+    // Check if target user is online
+    const targetUser = Array.from(connectedUsers.values()).find(user => user.email === targetEmail);
+    
+    if (targetUser) {
+      const callId = Date.now().toString();
+      
+      // Store call data
+      activeCalls.set(callId, {
+        id: callId,
+        caller: callerEmail,
+        callee: targetEmail,
+        offer: offer,
+        callerPublicKey: publicKey,
+        status: 'pending',
+        startTime: new Date()
+      });
+      
+      // Send incoming call notification to target user
+      io.to(targetEmail).emit('voice_call_incoming', {
+        callId: callId,
+        callerEmail: callerEmail,
+        offer: offer,
+        publicKey: publicKey
+      });
+      
+      console.log(`📞 Incoming call notification sent to ${targetEmail}`);
+    } else {
+      socket.emit('voice_call_error', { message: 'User is not online' });
+    }
+  });
+
+  socket.on('voice_call_answer', (data) => {
+    const { callId, answer, publicKey, calleeEmail } = data;
+    
+    console.log(`📞 Voice call answer from ${calleeEmail} for call ${callId}`);
+    
+    const callData = activeCalls.get(callId);
+    if (callData && callData.callee === calleeEmail) {
+      // Update call status
+      callData.status = 'connected';
+      callData.calleePublicKey = publicKey;
+      callData.answer = answer;
+      
+      // Send answer to caller
+      io.to(callData.caller).emit('voice_call_answered', {
+        callId: callId,
+        answer: answer,
+        publicKey: publicKey,
+        calleeEmail: calleeEmail
+      });
+      
+      console.log(`📞 Call answer sent to ${callData.caller}`);
+    } else {
+      socket.emit('voice_call_error', { message: 'Invalid call or call not found' });
+    }
+  });
+
+  socket.on('voice_call_reject', (data) => {
+    const { callId, userEmail } = data;
+    
+    console.log(`📞 Voice call rejected by ${userEmail} for call ${callId}`);
+    
+    const callData = activeCalls.get(callId);
+    if (callData) {
+      // Notify caller about rejection
+      io.to(callData.caller).emit('voice_call_rejected', {
+        callId: callId,
+        rejectedBy: userEmail
+      });
+      
+      // Clean up call data
+      activeCalls.delete(callId);
+      
+      console.log(`📞 Call rejection sent to ${callData.caller}`);
+    }
+  });
+
+  socket.on('voice_call_end', (data) => {
+    const { callId, userEmail } = data;
+    
+    console.log(`📞 Voice call ended by ${userEmail} for call ${callId}`);
+    
+    const callData = activeCalls.get(callId);
+    if (callData) {
+      // Update call end time
+      callData.endTime = new Date();
+      callData.duration = Math.floor((callData.endTime - callData.startTime) / 1000);
+      
+      // Update call statistics
+      const updateStats = (email) => {
+        if (!callStats.has(email)) {
+          callStats.set(email, { totalCalls: 0, totalDuration: 0, encryptedCalls: 0 });
+        }
+        const stats = callStats.get(email);
+        stats.totalCalls++;
+        stats.totalDuration += callData.duration;
+        stats.encryptedCalls++; // All calls are encrypted
+      };
+      
+      updateStats(callData.caller);
+      updateStats(callData.callee);
+      
+      // Notify both parties about call end
+      io.to(callData.caller).emit('voice_call_ended', { callId: callId });
+      io.to(callData.callee).emit('voice_call_ended', { callId: callId });
+      
+      // Clean up call data
+      activeCalls.delete(callId);
+      
+      console.log(`📞 Call end notification sent to both parties`);
+    }
+  });
+
+  socket.on('voice_get_available_users', () => {
+    const availableUsers = Array.from(connectedUsers.values())
+      .map(user => user.email)
+      .filter((email, index, arr) => arr.indexOf(email) === index); // Remove duplicates
+    
+    socket.emit('voice_users_available', availableUsers);
+  });
+
+  socket.on('voice_get_stats', () => {
+    const stats = callStats.get(socket.userEmail) || { totalCalls: 0, totalDuration: 0, encryptedCalls: 0 };
+    socket.emit('voice_call_stats', stats);
   });
 });
 
@@ -218,7 +370,19 @@ app.get('/users', (req, res) => {
     email: user.email,
     connectedAt: user.connectedAt
   }));
-  res.json(users);
+  
+  const userStats = Array.from(userSockets.entries()).map(([email, sockets]) => ({
+    email,
+    socketCount: sockets.size,
+    socketIds: Array.from(sockets)
+  }));
+  
+  res.json({
+    totalConnections: connectedUsers.size,
+    uniqueUsers: userSockets.size,
+    users: users,
+    userStats: userStats
+  });
 });
 
 const PORT = process.env.PORT || 3001;

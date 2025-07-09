@@ -72,12 +72,12 @@ interface ChatConnection {
   lastSeen?: Date
 }
 
-interface EncryptionKey {
-  id: string
-  name: string
-  key: string
-  createdAt: Date
-  isDefault: boolean
+// Add new interface for chat sessions
+interface ChatSession {
+  connectionId: string
+  messages: Message[]
+  lastActivity: Date
+  unreadCount: number
 }
 
 export default function ChatPage() {
@@ -86,7 +86,8 @@ export default function ChatPage() {
   const [socket, setSocket] = useState<Socket | null>(null)
   const [connections, setConnections] = useState<ChatConnection[]>([])
   const [selectedConnection, setSelectedConnection] = useState<ChatConnection | null>(null)
-  const [messages, setMessages] = useState<Message[]>([])
+  // Replace single messages state with chat sessions
+  const [chatSessions, setChatSessions] = useState<Map<string, ChatSession>>(new Map())
   const [newMessage, setNewMessage] = useState("")
   const [connectingEmail, setConnectingEmail] = useState("")
   const [isConnecting, setIsConnecting] = useState(false)
@@ -104,6 +105,87 @@ export default function ChatPage() {
 
   const MAX_FILE_SIZE_MB = 100
   const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+  // Helper function to get current chat session
+  const getCurrentChatSession = () => {
+    if (!selectedConnection) return null
+    return chatSessions.get(selectedConnection.id)
+  }
+
+  // Helper function to get current messages
+  const getCurrentMessages = () => {
+    const session = getCurrentChatSession()
+    return session ? session.messages : []
+  }
+
+  // Helper function to add message to current chat session
+  const addMessageToCurrentSession = (message: Message) => {
+    if (!selectedConnection) return
+
+    setChatSessions(prev => {
+      const newSessions = new Map(prev)
+      const currentSession = newSessions.get(selectedConnection.id) || {
+        connectionId: selectedConnection.id,
+        messages: [],
+        lastActivity: new Date(),
+        unreadCount: 0
+      }
+      
+      newSessions.set(selectedConnection.id, {
+        ...currentSession,
+        messages: [...currentSession.messages, message],
+        lastActivity: new Date()
+      })
+      
+      return newSessions
+    })
+  }
+
+  // Helper function to create or get chat session
+  const getOrCreateChatSession = (connectionId: string): ChatSession => {
+    const existing = chatSessions.get(connectionId)
+    if (existing) return existing
+    
+    const newSession: ChatSession = {
+      connectionId,
+      messages: [],
+      lastActivity: new Date(),
+      unreadCount: 0
+    }
+    
+    setChatSessions(prev => new Map(prev).set(connectionId, newSession))
+    return newSession
+  }
+
+  // Helper function to mark messages as read for a connection
+  const markConnectionAsRead = (connectionId: string) => {
+    setChatSessions(prev => {
+      const newSessions = new Map(prev)
+      const session = newSessions.get(connectionId)
+      if (session) {
+        newSessions.set(connectionId, {
+          ...session,
+          unreadCount: 0
+        })
+      }
+      return newSessions
+    })
+  }
+
+  // Helper function to increment unread count for a connection
+  const incrementUnreadCount = (connectionId: string) => {
+    setChatSessions(prev => {
+      const newSessions = new Map(prev)
+      const session = newSessions.get(connectionId)
+      if (session) {
+        newSessions.set(connectionId, {
+          ...session,
+          unreadCount: session.unreadCount + 1
+        })
+      }
+      return newSessions
+    })
+  }
 
   // On mount, load key from localStorage
   useEffect(() => {
@@ -193,6 +275,16 @@ export default function ChatPage() {
       newSocket.on('message_received', async (message: Message) => {
         console.log('📨 Message received:', message)
         
+        // Find the connection ID for this sender
+        const senderConnection = connections.find(conn => conn.email === message.sender)
+        if (!senderConnection) {
+          console.log('❌ No connection found for sender:', message.sender)
+          return
+        }
+        
+        // Create or get the chat session for this connection
+        const session = getOrCreateChatSession(senderConnection.id)
+        
         // Always try to decrypt if the message is encrypted
         if (message.encrypted && message.type === 'encrypted_text' && message.content) {
           try {
@@ -200,33 +292,88 @@ export default function ChatPage() {
             const decryptedContent = await decryptText(message.content, encryptionKey)
             console.log('✅ Message decrypted successfully:', decryptedContent)
             
-            // Show decrypted content to user
-            setMessages(prev => [...prev, {
-              ...message,
-              content: decryptedContent,
-              decrypted: true
-            }])
+            // Add decrypted message to the correct session
+            setChatSessions(prev => {
+              const newSessions = new Map(prev)
+              const currentSession = newSessions.get(senderConnection.id) || session
+              
+              // Increment unread count if this connection is not currently selected
+              const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
+              
+              newSessions.set(senderConnection.id, {
+                ...currentSession,
+                messages: [...currentSession.messages, {
+                  ...message,
+                  content: decryptedContent,
+                  decrypted: true
+                }],
+                lastActivity: new Date(),
+                unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
+              })
+              
+              return newSessions
+            })
             return
           } catch (err) {
             console.log('❌ Decryption failed:', err)
-            // Show encrypted message with error
-            setMessages(prev => [...prev, { 
-              ...message, 
-              content: "[Encrypted message - decryption failed]",
-              decrypted: false 
-            }])
+            // Add encrypted message with error to the correct session
+            setChatSessions(prev => {
+              const newSessions = new Map(prev)
+              const currentSession = newSessions.get(senderConnection.id) || session
+              
+              // Increment unread count if this connection is not currently selected
+              const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
+              
+              newSessions.set(senderConnection.id, {
+                ...currentSession,
+                messages: [...currentSession.messages, { 
+                  ...message, 
+                  content: "[Encrypted message - decryption failed]",
+                  decrypted: false 
+                }],
+                lastActivity: new Date(),
+                unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
+              })
+              
+              return newSessions
+            })
             toast.error("Failed to decrypt message")
             return
           }
         }
         
-        // Handle plain text messages
-        console.log('📝 Adding plain message to chat')
-        setMessages(prev => [...prev, message])
+        // Handle plain text messages - add to correct session
+        console.log('📝 Adding plain message to chat session:', senderConnection.id)
+        setChatSessions(prev => {
+          const newSessions = new Map(prev)
+          const currentSession = newSessions.get(senderConnection.id) || session
+          
+          // Increment unread count if this connection is not currently selected
+          const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
+          
+          newSessions.set(senderConnection.id, {
+            ...currentSession,
+            messages: [...currentSession.messages, message],
+            lastActivity: new Date(),
+            unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
+          })
+          
+          return newSessions
+        })
       })
 
       newSocket.on('file_received', async (message: Message) => {
         console.log('📁 File received:', message)
+        
+        // Find the connection ID for this sender
+        const senderConnection = connections.find(conn => conn.email === message.sender)
+        if (!senderConnection) {
+          console.log('❌ No connection found for sender:', message.sender)
+          return
+        }
+        
+        // Create or get the chat session for this connection
+        const session = getOrCreateChatSession(senderConnection.id)
         
         // Always try to decrypt if the file is encrypted
         if (message.encrypted && message.type === 'encrypted_file' && message.fileUrl) {
@@ -254,37 +401,86 @@ export default function ChatPage() {
             
             console.log('✅ File decrypted successfully:', result.originalName)
             
-            // Show decrypted file to user
-            setMessages(prev => [...prev, {
-              ...message,
-              fileUrl: decryptedUrl,
-              fileName: result.originalName,
-              decrypted: true
-            }])
+            // Add decrypted file to the correct session
+            setChatSessions(prev => {
+              const newSessions = new Map(prev)
+              const currentSession = newSessions.get(senderConnection.id) || session
+              
+              // Increment unread count if this connection is not currently selected
+              const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
+              
+              newSessions.set(senderConnection.id, {
+                ...currentSession,
+                messages: [...currentSession.messages, {
+                  ...message,
+                  fileUrl: decryptedUrl,
+                  fileName: result.originalName,
+                  decrypted: true
+                }],
+                lastActivity: new Date(),
+                unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
+              })
+              
+              return newSessions
+            })
             toast.success(`Received decrypted file: ${result.originalName}`)
             return
           } catch (err) {
             console.log('❌ File decryption failed:', err)
-            // Show encrypted file with error
-            setMessages(prev => [...prev, { 
-              ...message, 
-              content: `[Encrypted file - decryption failed: ${message.fileName}]`,
-              decrypted: false 
-            }])
+            // Add encrypted file with error to the correct session
+            setChatSessions(prev => {
+              const newSessions = new Map(prev)
+              const currentSession = newSessions.get(senderConnection.id) || session
+              
+              // Increment unread count if this connection is not currently selected
+              const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
+              
+              newSessions.set(senderConnection.id, {
+                ...currentSession,
+                messages: [...currentSession.messages, { 
+                  ...message, 
+                  content: `[Encrypted file - decryption failed: ${message.fileName}]`,
+                  decrypted: false 
+                }],
+                lastActivity: new Date(),
+                unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
+              })
+              
+              return newSessions
+            })
             toast.error("Failed to decrypt file")
             return
           }
         }
         
-        // Handle plain files
-        console.log('📁 Adding plain file to chat')
-        setMessages(prev => [...prev, message])
+        // Handle plain files - add to correct session
+        console.log('📁 Adding plain file to chat session:', senderConnection.id)
+        setChatSessions(prev => {
+          const newSessions = new Map(prev)
+          const currentSession = newSessions.get(senderConnection.id) || session
+          
+          // Increment unread count if this connection is not currently selected
+          const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
+          
+          newSessions.set(senderConnection.id, {
+            ...currentSession,
+            messages: [...currentSession.messages, message],
+            lastActivity: new Date(),
+            unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
+          })
+          
+          return newSessions
+        })
         toast.success(`Received file: ${message.fileName}`)
       })
 
       newSocket.on('connection_established', (connection: ChatConnection) => {
         console.log('🤝 Connection established with:', connection.email)
         setConnections(prev => [...prev, connection])
+        
+        // Create a new chat session for this connection
+        getOrCreateChatSession(connection.id)
+        
         toast.success(`Connected with ${connection.email}`)
       })
 
@@ -298,7 +494,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [chatSessions]) // Changed dependency to chatSessions
 
   const connectToUser = async () => {
     if (!connectingEmail || !socket || !encryptionKey) return
@@ -320,7 +516,12 @@ export default function ChatPage() {
       // Remove the connection from local state
       setConnections(prev => prev.filter(conn => conn.id !== selectedConnection.id))
       setSelectedConnection(null)
-      setMessages([])
+      // Clear messages for the disconnected user
+      setChatSessions(prev => {
+        const newSessions = new Map(prev)
+        newSessions.delete(selectedConnection.id)
+        return newSessions
+      })
       
       // Emit disconnect event to server (if needed)
       socket.emit('disconnect_from_user', { targetEmail: selectedConnection.email })
@@ -378,12 +579,28 @@ export default function ChatPage() {
       message
     })
 
-    // Add the original plain text message to the chat for the sender
-    setMessages(prev => [...prev, {
-      ...message,
-      content: newMessage, // Show plain text to sender
-      decrypted: true
-    }])
+          // Add the original plain text message to the chat for the sender
+      setChatSessions(prev => {
+        const newSessions = new Map(prev)
+        const currentSession = newSessions.get(selectedConnection.id) || {
+          connectionId: selectedConnection.id,
+          messages: [],
+          lastActivity: new Date(),
+          unreadCount: 0
+        }
+      
+      newSessions.set(selectedConnection.id, {
+        ...currentSession,
+        messages: [...currentSession.messages, {
+          ...message,
+          content: newMessage, // Show plain text to sender
+          decrypted: true
+        }],
+        lastActivity: new Date()
+      })
+      
+      return newSessions
+    })
     setNewMessage("")
   }
 
@@ -460,11 +677,27 @@ export default function ChatPage() {
       })
 
       // Add the original file message to the chat for the sender
-      setMessages(prev => [...prev, {
-        ...message,
-        fileName: file.name, // Show original filename to sender
-        decrypted: true
-      }])
+      setChatSessions(prev => {
+        const newSessions = new Map(prev)
+        const currentSession = newSessions.get(selectedConnection.id) || {
+          connectionId: selectedConnection.id,
+          messages: [],
+          lastActivity: new Date(),
+          unreadCount: 0
+        }
+        
+        newSessions.set(selectedConnection.id, {
+          ...currentSession,
+          messages: [...currentSession.messages, {
+            ...message,
+            fileName: file.name, // Show original filename to sender
+            decrypted: true
+          }],
+          lastActivity: new Date()
+        })
+        
+        return newSessions
+      })
       toast.success("File sent successfully")
     } catch (error) {
       console.log('❌ File send failed:', error)
@@ -620,10 +853,33 @@ export default function ChatPage() {
                           <div className="flex items-center justify-between">
                             <div 
                               className="flex items-center gap-2 cursor-pointer flex-1"
-                              onClick={() => setSelectedConnection(connection)}
+                              onClick={() => {
+                                setSelectedConnection(connection)
+                                markConnectionAsRead(connection.id)
+                              }}
                             >
                               <User className="h-4 w-4" />
-                              <span className="text-sm font-medium">{connection.email}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium truncate">{connection.email}</div>
+                                {/* Show last message preview */}
+                                {(() => {
+                                  const session = chatSessions.get(connection.id)
+                                  if (session && session.messages.length > 0) {
+                                    const lastMessage = session.messages[session.messages.length - 1]
+                                    return (
+                                      <div className="text-xs text-white/60 truncate">
+                                        {lastMessage.type === 'file' || lastMessage.type === 'encrypted_file' 
+                                          ? `📁 ${lastMessage.fileName || 'File'}`
+                                          : lastMessage.content.length > 30 
+                                            ? lastMessage.content.substring(0, 30) + '...'
+                                            : lastMessage.content
+                                        }
+                                      </div>
+                                    )
+                                  }
+                                  return null
+                                })()}
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
                               {connection.isOnline ? (
@@ -631,6 +887,15 @@ export default function ChatPage() {
                               ) : (
                                 <div className="w-2 h-2 bg-gray-400 rounded-full" />
                               )}
+                              {/* Show unread count badge */}
+                              {(() => {
+                                const session = chatSessions.get(connection.id)
+                                return session && session.unreadCount > 0 ? (
+                                  <Badge variant="destructive" className="text-xs px-1.5 py-0.5 min-w-[20px] h-5">
+                                    {session.unreadCount > 99 ? '99+' : session.unreadCount}
+                                  </Badge>
+                                ) : null
+                              })()}
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -640,7 +905,12 @@ export default function ChatPage() {
                                   setConnections(prev => prev.filter(conn => conn.id !== connection.id))
                                   if (selectedConnection?.id === connection.id) {
                                     setSelectedConnection(null)
-                                    setMessages([])
+                                    // Clear messages for the disconnected user
+                                    setChatSessions(prev => {
+                                      const newSessions = new Map(prev)
+                                      newSessions.delete(connection.id)
+                                      return newSessions
+                                    })
                                   }
                                   socket?.emit('disconnect_from_user', { targetEmail: connection.email })
                                   toast.success(`Disconnected from ${connection.email}`)
@@ -740,12 +1010,12 @@ export default function ChatPage() {
                   <>
                     <ScrollArea className="h-96 border border-white/10 rounded-lg p-4">
                       <div className="space-y-4">
-                        {messages.length === 0 ? (
+                        {getCurrentMessages().length === 0 ? (
                           <p className="text-white/40 text-sm text-center py-8">
                             No messages yet. Start the conversation!
                           </p>
                         ) : (
-                          messages.map((message) => {
+                          getCurrentMessages().map((message) => {
                             const isSender = message.sender === (user as any).email;
                             const initials = message.sender
                               ? message.sender.split("@")[0].slice(0, 2).toUpperCase()

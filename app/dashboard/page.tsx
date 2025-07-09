@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Lock, FileText, MessageCircle } from "lucide-react"
+import { Lock, FileText, MessageCircle, Phone } from "lucide-react"
 import { MotionDiv, MotionH1, MotionP } from "@/components/motion"
 import Link from "next/link"
 import Header from "@/components/header"
@@ -64,6 +64,13 @@ export default function Dashboard() {
       href: "/dashboard/chat",
       color: "from-white/20 to-white/5",
     },
+    {
+      title: "Voice Calling",
+      description: "Make secure, end-to-end encrypted voice calls with AES-256 encryption",
+      icon: Phone,
+      href: "/dashboard/voice",
+      color: "from-white/20 to-white/5",
+    },
   ]
 
   return (
@@ -84,7 +91,7 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="text-6xl font-light tracking-tight mb-4"
+              {...{ className: "text-6xl font-light tracking-tight mb-4" }}
             >
               Welcome back, {getUserDisplayName()}
             </MotionH1>
@@ -92,7 +99,7 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              className="text-xl text-white/60 font-light"
+              {...{ className: "text-xl text-white/60 font-light" }}
             >
               Choose your encryption tool below
             </MotionP>

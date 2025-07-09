@@ -16,6 +16,30 @@ The chat system consists of two main components:
 - ✅ Online/offline status tracking
 - ✅ Modern, responsive UI
 - ✅ End-to-end encryption ready (can be enhanced)
+- ✅ **Multi-device support** - Connect multiple devices to the same account
+- ✅ **Separated chat histories** - Each user conversation has its own isolated chat history
+- ✅ **Unread message indicators** - Visual badges show unread message counts
+- ✅ **Message previews** - See last message preview in connection list
+- ✅ **Cross-device synchronization** - Messages sync across all connected devices
+
+## Multi-Device Support
+
+The chat system now supports multiple devices connecting to the same user account:
+
+- **Multiple Connections**: Users can connect from multiple devices (phone, tablet, desktop)
+- **Synchronized Messages**: All messages are delivered to all connected devices
+- **Separated Chat Histories**: Each conversation with a different user is completely isolated
+- **Unread Counts**: Unread message counts are tracked per conversation
+- **Real-time Updates**: All devices receive messages in real-time
+
+## Chat History Management
+
+Each chat conversation is now properly isolated:
+
+- **Per-Connection Sessions**: Each user connection has its own chat session
+- **Persistent History**: Chat history is maintained per connection until disconnection
+- **No Cross-Contamination**: Messages from different users never mix
+- **Clean Switching**: Switching between connections shows the correct chat history
 
 ## Quick Start
 
@@ -71,179 +95,97 @@ npm run dev:full
 2. **Click Connect**: The system will attempt to establish a connection
 3. **Wait for Confirmation**: If the user is online, the connection will be established
 
-### 3. Send Messages
+### 3. Multi-Device Setup
+
+1. **Connect from Multiple Devices**: Open the chat on different devices using the same account
+2. **Automatic Sync**: Messages will automatically sync across all connected devices
+3. **Separate Conversations**: Each conversation with a different user remains isolated
+4. **Unread Indicators**: Red badges show unread message counts for each conversation
+
+### 4. Send Messages
 
 1. **Select a Connection**: Click on a connected user from the left panel
 2. **Type Message**: Use the text area at the bottom
 3. **Send**: Press Enter or click the Send button
+4. **Cross-Device Delivery**: Message appears on all connected devices
 
-### 4. Share Files
+### 5. Share Files
 
 1. **Select a Connection**: Choose the user you want to share with
-2. **Attach File**: Click the paperclip icon
-3. **Choose File**: Select the file from your device
-4. **Send**: The file will be sent automatically
+2. **Click File Icon**: Use the paperclip icon to select a file
+3. **Send**: The file will be sent to all connected devices
+4. **Download**: Recipients can download files directly from the chat
 
-### 5. Download Files
+## Technical Details
 
-1. **View File**: Files appear as messages with a download button
-2. **Download**: Click the download icon to save the file
+### Chat Sessions
 
-## Architecture
+Each user connection creates a separate chat session with:
+- Unique session ID based on connection
+- Isolated message history
+- Unread message counter
+- Last activity timestamp
 
-```
-┌─────────────────┐    WebSocket    ┌─────────────────┐
-│   Next.js App   │ ◄─────────────► │  Chat Server    │
-│   (Frontend)    │                 │   (Backend)     │
-└─────────────────┘                 └─────────────────┘
-        │                                    │
-        │                                    │
-        ▼                                    ▼
-┌─────────────────┐                 ┌─────────────────┐
-│   User Browser  │                 │  Socket.IO      │
-│                 │                 │  Express.js     │
-└─────────────────┘                 └─────────────────┘
-```
+### Multi-Device Architecture
 
-## Environment Variables
+- **Socket.IO Rooms**: Each user joins their personal room
+- **Broadcast Messages**: Messages are sent to all sockets in the user's room
+- **Connection Tracking**: Server tracks multiple sockets per user
+- **Graceful Cleanup**: Connections are cleaned up when all devices disconnect
 
-### Frontend (.env.local)
-```bash
-NEXT_PUBLIC_CHAT_SERVER_URL=http://localhost:3001
-```
+### Message Routing
 
-### Chat Server
-```bash
-FRONTEND_URL=http://localhost:3000
-PORT=3001
-```
-
-## Deployment
-
-### Frontend (Vercel)
-1. Push your code to GitHub
-2. Connect to Vercel
-3. Set environment variable: `NEXT_PUBLIC_CHAT_SERVER_URL=https://your-chat-server.com`
-
-### Chat Server (VPS/Cloud)
-1. **Deploy to VPS:**
-```bash
-# On your server
-git clone <your-repo>
-cd chat-server
-npm install
-npm start
-```
-
-2. **Use PM2 for production:**
-```bash
-npm install -g pm2
-pm2 start server.js --name "zephy-chat"
-pm2 startup
-pm2 save
-```
-
-3. **Set up reverse proxy (nginx):**
-```nginx
-server {
-    listen 80;
-    server_name your-chat-server.com;
-
-    location / {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-## Security Considerations
-
-### Current Implementation
-- ✅ Authentication required for connections
-- ✅ Users can only message connected users
-- ✅ CORS protection enabled
-- ✅ Input validation
-
-### Recommended Enhancements
-- 🔒 End-to-end encryption for messages
-- 🔒 File encryption before transfer
-- 🔒 Rate limiting
-- 🔒 Message persistence with database
-- 🔒 User blocking/blocking features
+- **Sender Identification**: Messages are routed based on sender email
+- **Session Matching**: Messages are added to the correct chat session
+- **Unread Tracking**: Unread counts increment for non-active conversations
+- **Read Status**: Messages are marked as read when conversation is selected
 
 ## Troubleshooting
 
-### Common Issues
+### Connection Issues
 
-1. **"User is not online"**
-   - The target user must be logged into the chat system
-   - Check if they're on the chat page
+1. **Check Server Status**: Visit `http://localhost:3001/health`
+2. **Verify CORS**: Ensure frontend URL is in allowed origins
+3. **Check Network**: Verify WebSocket connection is established
 
-2. **Connection failed**
-   - Verify the chat server is running
-   - Check environment variables
-   - Ensure CORS is properly configured
+### Message Issues
 
-3. **Messages not sending**
-   - Check browser console for errors
-   - Verify WebSocket connection status
-   - Ensure both users are connected
+1. **Encryption Keys**: Ensure both users have the same encryption key
+2. **User Online**: Verify target user is connected to chat server
+3. **Connection Status**: Check if users are properly connected
 
-4. **File upload issues**
-   - Check file size limits
-   - Verify file type is supported
-   - Check browser permissions
+### Multi-Device Issues
 
-### Debug Commands
+1. **Session Isolation**: Each device maintains separate chat sessions
+2. **Message Sync**: Messages should appear on all connected devices
+3. **Unread Counts**: Counts should reset when conversation is selected
 
-```bash
-# Check chat server health
-curl http://localhost:3001/health
+## API Endpoints
 
-# View connected users
-curl http://localhost:3001/users
-
-# Check server logs
-docker-compose logs chat-server
+### Health Check
+```
+GET /health
 ```
 
-## Development
+### Connected Users (Debug)
+```
+GET /users
+```
 
-### Adding New Features
+Returns detailed information about connected users and their devices.
 
-1. **New Message Types**: Modify the `Message` interface in `app/dashboard/chat/page.tsx`
-2. **Enhanced UI**: Update the chat components
-3. **Server Logic**: Add new socket events in `chat-server/server.js`
+## Security Features
 
-### Testing
-
-1. **Local Testing**: Use two browser windows/tabs
-2. **Multi-user Testing**: Use different browsers or incognito windows
-3. **Network Testing**: Test with different network conditions
-
-## Support
-
-If you encounter issues:
-1. Check the troubleshooting section above
-2. Review server logs for errors
-3. Verify all environment variables are set correctly
-4. Ensure both frontend and backend are running
+- **End-to-End Encryption**: Messages can be encrypted with shared keys
+- **Connection Validation**: Only authenticated users can connect
+- **Message Isolation**: Messages are isolated per conversation
+- **Secure File Transfer**: Files are transferred securely via WebSocket
 
 ## Future Enhancements
 
-- [ ] End-to-end encryption
-- [ ] Message history persistence
-- [ ] Group chats
-- [ ] Voice/video calls
+- [ ] Persistent message storage
+- [ ] Message search functionality
+- [ ] Group chat support
 - [ ] Message reactions
-- [ ] File preview
-- [ ] User profiles
-- [ ] Message search
-- [ ] Push notifications 
+- [ ] Typing indicators
+- [ ] Message delivery receipts 
