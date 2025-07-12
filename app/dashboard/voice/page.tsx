@@ -38,7 +38,8 @@ export default function VoiceCallPage() {
   const [callStats, setCallStats] = useState({
     totalCalls: 0,
     totalDuration: 0,
-    encryptedCalls: 0
+    encryptedCalls: 0,
+    videoCalls: 0
   })
 
   useEffect(() => {
@@ -170,7 +171,7 @@ export default function VoiceCallPage() {
               transition={{ delay: 0.3, duration: 0.8 }}
               {...{ className: "text-4xl font-light tracking-tight mb-4" }}
             >
-              Secure Voice Calling
+              Secure Voice & Video Calling
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -178,7 +179,7 @@ export default function VoiceCallPage() {
               transition={{ delay: 0.5, duration: 0.8 }}
               {...{ className: "text-lg text-white/60 font-light" }}
             >
-              End-to-end encrypted voice calls with AES-256 encryption and secure key exchange
+              End-to-end encrypted voice and video calls with AES-256 encryption and secure key exchange
             </motion.p>
           </div>
 
@@ -249,9 +250,15 @@ export default function VoiceCallPage() {
                       <div className="text-xs text-white/60">Total Duration</div>
                     </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-400">{callStats.encryptedCalls}</div>
-                    <div className="text-xs text-white/60">Encrypted Calls</div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-400">{callStats.encryptedCalls}</div>
+                      <div className="text-xs text-white/60">Encrypted Calls</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-400">{callStats.videoCalls}</div>
+                      <div className="text-xs text-white/60">Video Calls</div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -283,7 +290,11 @@ export default function VoiceCallPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-400" />
-                    <span className="text-sm">Real-time Audio Processing</span>
+                    <span className="text-sm">Real-time Audio/Video Processing</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-400" />
+                    <span className="text-sm">Video Call Support</span>
                   </div>
                 </CardContent>
               </Card>

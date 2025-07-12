@@ -121,6 +121,19 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'User is not online' });
     }
   });
+
+  // Broadcast available users to all connected users
+  const broadcastAvailableUsers = () => {
+    const availableUsers = Array.from(connectedUsers.values())
+      .map(user => user.email)
+      .filter((email, index, arr) => arr.indexOf(email) === index); // Remove duplicates
+    
+    io.emit('voice_users_available', availableUsers);
+    console.log(`📡 Broadcasted available users: ${availableUsers.join(', ')} (Total: ${availableUsers.length})`);
+  };
+
+  // Broadcast available users when someone connects
+  setTimeout(broadcastAvailableUsers, 500);
   
   // Handle text messages
   socket.on('send_message', (data) => {
@@ -220,13 +233,28 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('user_disconnected', { email: socket.userEmail });
       }
     }
+    // Always broadcast available users after any disconnect
+    setTimeout(broadcastAvailableUsers, 500);
   });
 
-  // Voice Call Events
-  socket.on('voice_call_request', (data) => {
-    const { targetEmail, offer, publicKey, callerEmail } = data;
+  // Voice/Video Call Events
+    socket.on('voice_call_request', (data) => {
+    // Log the full incoming data
+    console.log('RAW voice_call_request data:', data);
     
-    console.log(`📞 Voice call request from ${callerEmail} to ${targetEmail}`);
+    // Force hasVideo to boolean, fallback to false if missing
+    let hasVideo = false;
+    if (typeof data.hasVideo === 'boolean') {
+      hasVideo = data.hasVideo;
+    } else if (typeof data.hasVideo === 'string') {
+      hasVideo = data.hasVideo === 'true';
+    } else {
+      console.warn('WARNING: hasVideo missing in incoming data, defaulting to false. Data:', data);
+    }
+    
+    const { targetEmail, offer, publicKey, callerEmail } = data;
+    console.log('Processed voice_call_request:', { ...data, hasVideo });
+    console.log(`📞 ${hasVideo ? 'Video' : 'Voice'} call request from ${callerEmail} to ${targetEmail}`);
     
     // Check if target user is online
     const targetUser = Array.from(connectedUsers.values()).find(user => user.email === targetEmail);
@@ -241,19 +269,25 @@ io.on('connection', (socket) => {
         callee: targetEmail,
         offer: offer,
         callerPublicKey: publicKey,
+        hasVideo: hasVideo,
         status: 'pending',
         startTime: new Date()
       });
       
       // Send incoming call notification to target user
-      io.to(targetEmail).emit('voice_call_incoming', {
+      const incomingCallData = {
         callId: callId,
         callerEmail: callerEmail,
         offer: offer,
-        publicKey: publicKey
-      });
+        publicKey: publicKey,
+        hasVideo: hasVideo,
+        debug: 'VIDEO_FIX_TEST'
+      };
       
-      console.log(`📞 Incoming call notification sent to ${targetEmail}`);
+      io.to(targetEmail).emit('voice_call_incoming', incomingCallData);
+      console.log('EMITTED voice_call_incoming:', incomingCallData);
+      
+      console.log(`📞 Incoming ${hasVideo ? 'video' : 'voice'} call notification sent to ${targetEmail}`);
     } else {
       socket.emit('voice_call_error', { message: 'User is not online' });
     }
@@ -265,6 +299,10 @@ io.on('connection', (socket) => {
     console.log(`📞 Voice call answer from ${calleeEmail} for call ${callId}`);
     
     const callData = activeCalls.get(callId);
+    let hasVideo = false;
+    if (callData && typeof callData.hasVideo === 'boolean') {
+      hasVideo = callData.hasVideo;
+    }
     if (callData && callData.callee === calleeEmail) {
       // Update call status
       callData.status = 'connected';
@@ -276,10 +314,18 @@ io.on('connection', (socket) => {
         callId: callId,
         answer: answer,
         publicKey: publicKey,
-        calleeEmail: calleeEmail
+        calleeEmail: calleeEmail,
+        hasVideo: !!hasVideo // Always boolean
+      });
+      console.log('EMITTED voice_call_answered:', {
+        callId: callId,
+        answer: answer,
+        publicKey: publicKey,
+        calleeEmail: calleeEmail,
+        hasVideo: !!hasVideo
       });
       
-      console.log(`📞 Call answer sent to ${callData.caller}`);
+      console.log(`📞 ${callData.hasVideo ? 'Video' : 'Voice'} call answer sent to ${callData.caller}`);
     } else {
       socket.emit('voice_call_error', { message: 'Invalid call or call not found' });
     }
@@ -319,12 +365,15 @@ io.on('connection', (socket) => {
       // Update call statistics
       const updateStats = (email) => {
         if (!callStats.has(email)) {
-          callStats.set(email, { totalCalls: 0, totalDuration: 0, encryptedCalls: 0 });
+          callStats.set(email, { totalCalls: 0, totalDuration: 0, encryptedCalls: 0, videoCalls: 0 });
         }
         const stats = callStats.get(email);
         stats.totalCalls++;
         stats.totalDuration += callData.duration;
         stats.encryptedCalls++; // All calls are encrypted
+        if (callData.hasVideo) {
+          stats.videoCalls++;
+        }
       };
       
       updateStats(callData.caller);
@@ -350,7 +399,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('voice_get_stats', () => {
-    const stats = callStats.get(socket.userEmail) || { totalCalls: 0, totalDuration: 0, encryptedCalls: 0 };
+    const stats = callStats.get(socket.userEmail) || { totalCalls: 0, totalDuration: 0, encryptedCalls: 0, videoCalls: 0 };
     socket.emit('voice_call_stats', stats);
   });
 });

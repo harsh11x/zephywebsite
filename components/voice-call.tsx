@@ -29,7 +29,10 @@ import {
   Wifi,
   WifiOff,
   X,
-  Plus
+  Plus,
+  Video,
+  VideoOff,
+  Monitor
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -123,6 +126,7 @@ interface CallSession {
   endTime?: Date
   encryptionKey?: CryptoKey
   isInitiator: boolean
+  hasVideo: boolean
 }
 
 interface VoiceCallProps {
@@ -151,6 +155,9 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
   const [showKeyWarning, setShowKeyWarning] = useState(false)
   const [micPermission, setMicPermission] = useState<'pending' | 'granted' | 'denied'>('pending')
   const [notifPermission, setNotifPermission] = useState<'pending' | 'granted' | 'denied'>('pending')
+  const [hasVideo, setHasVideo] = useState(false)
+  const [isVideoEnabled, setIsVideoEnabled] = useState(false)
+  const [isCameraOff, setIsCameraOff] = useState(false)
 
   // WebRTC refs
   const localStreamRef = useRef<MediaStream | null>(null)
@@ -158,6 +165,8 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null)
   const localAudioRef = useRef<HTMLAudioElement | null>(null)
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
+  const localVideoRef = useRef<HTMLVideoElement | null>(null)
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null)
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Crypto refs
@@ -166,6 +175,9 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
 
   // Ringtone audio element (hidden)
   const ringtoneRef = useRef<HTMLAudioElement | null>(null)
+
+  // Check if permissions are OK
+  const permissionsOk = micPermission === 'granted' && notifPermission === 'granted'
 
   // On mount, load key from localStorage
   useEffect(() => {
@@ -198,50 +210,78 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
           setNotifPermission(permission === 'granted' ? 'granted' : 'denied')
         })
       }
-    } else {
-      setNotifPermission('denied')
     }
   }, [])
 
-  // Block call features if permissions are not granted
-  const permissionsOk = micPermission === 'granted' && notifPermission === 'granted'
-
-  // Initialize WebRTC
-  const initializeWebRTC = useCallback(async () => {
+  // Generate encryption keys
+  const generateEncryptionKeys = async (): Promise<string> => {
     try {
-      // Get user media
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const keyPair = await SecureVoiceCrypto.generateKeyPair()
+      keyPairRef.current = keyPair
+      const publicKeyString = await SecureVoiceCrypto.exportPublicKey(keyPair.publicKey)
+      return publicKeyString
+    } catch (error) {
+      console.error('Failed to generate encryption keys:', error)
+      throw error
+    }
+  }
+
+  // Initialize WebRTC connection
+  const initializeWebRTC = async (): Promise<RTCPeerConnection> => {
+    try {
+      // Get user media with audio and video if enabled
+      const mediaConstraints = {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 48000
+          autoGainControl: true
         },
-        video: false 
-      })
-      
+        video: hasVideo ? {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30 }
+        } : false
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints)
       localStreamRef.current = stream
-      
+
+      // Set up audio elements
+      if (localAudioRef.current) {
+        localAudioRef.current.srcObject = stream
+      }
+      if (localVideoRef.current && hasVideo) {
+        localVideoRef.current.srcObject = stream
+      }
+
       // Create peer connection with STUN servers
       const peerConnection = new RTCPeerConnection({
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' }
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' }
         ],
         iceCandidatePoolSize: 10
       })
 
-      // Add local stream
+      // Add local stream tracks
       stream.getTracks().forEach(track => {
         peerConnection.addTrack(track, stream)
       })
 
-      // Handle incoming tracks
+      // Handle remote stream
       peerConnection.ontrack = (event) => {
-        remoteStreamRef.current = event.streams[0]
-        if (remoteAudioRef.current) {
-          remoteAudioRef.current.srcObject = event.streams[0]
+        console.log('Remote track received:', event.track.kind)
+        if (event.streams && event.streams[0]) {
+          remoteStreamRef.current = event.streams[0]
+          if (remoteAudioRef.current) {
+            remoteAudioRef.current.srcObject = event.streams[0]
+          }
+          if (remoteVideoRef.current && hasVideo) {
+            remoteVideoRef.current.srcObject = event.streams[0]
+          }
         }
       }
 
@@ -250,12 +290,14 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
         console.log('Connection state:', peerConnection.connectionState)
         if (peerConnection.connectionState === 'connected') {
           setConnectionQuality('excellent')
-        } else if (peerConnection.connectionState === 'disconnected') {
+          toast.success('Call connected successfully')
+        } else if (peerConnection.connectionState === 'failed') {
           setConnectionQuality('poor')
+          toast.error('Call connection failed')
         }
       }
 
-      // Handle ICE connection state
+      // Handle ICE connection state changes
       peerConnection.oniceconnectionstatechange = () => {
         console.log('ICE connection state:', peerConnection.iceConnectionState)
         if (peerConnection.iceConnectionState === 'connected') {
@@ -271,31 +313,27 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
       return peerConnection
     } catch (error) {
       console.error('Failed to initialize WebRTC:', error)
-      toast.error('Failed to access microphone')
       throw error
     }
-  }, [])
+  }
 
-  // Generate encryption keys
-  const generateEncryptionKeys = useCallback(async () => {
-    try {
-      const keyPair = await SecureVoiceCrypto.generateKeyPair()
-      keyPairRef.current = keyPair
-      const publicKeyString = await SecureVoiceCrypto.exportPublicKey(keyPair.publicKey)
-      return publicKeyString
-    } catch (error) {
-      console.error('Failed to generate encryption keys:', error)
-      toast.error('Failed to establish secure connection')
-      throw error
-    }
-  }, [])
-
-  // Derive final AES key using ECDH shared key and user-provided sharedKey
+  // Derive final AES key using shared secret
   const deriveFinalAESKey = async (ecdhKey: CryptoKey, sharedSecret: string): Promise<CryptoKey> => {
-    // Hash the shared secret to 256 bits
-    const secretBytes = new TextEncoder().encode(sharedSecret)
-    const hash = await window.crypto.subtle.digest('SHA-256', secretBytes)
-    // Import as AES key
+    const encoder = new TextEncoder()
+    const sharedSecretBytes = encoder.encode(sharedSecret)
+    
+    // Export ECDH key to raw bytes
+    const ecdhKeyBytes = await window.crypto.subtle.exportKey('raw', ecdhKey)
+    const ecdhKeyArray = new Uint8Array(ecdhKeyBytes)
+    
+    // Combine ECDH key with shared secret
+    const combined = new Uint8Array(ecdhKeyArray.length + sharedSecretBytes.length)
+    combined.set(ecdhKeyArray, 0)
+    combined.set(sharedSecretBytes, ecdhKeyArray.length)
+    
+    // Hash the combined key
+    const hash = await window.crypto.subtle.digest('SHA-256', combined)
+    
     return await window.crypto.subtle.importKey(
       'raw',
       hash,
@@ -360,7 +398,8 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
         targetEmail: callTarget,
         offer: offer,
         publicKey: publicKeyString,
-        callerEmail: userEmail
+        callerEmail: userEmail,
+        hasVideo: hasVideo
       }
       
       socket.emit('voice_call_request', callData)
@@ -372,7 +411,8 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
         callee: callTarget,
         status: 'connecting',
         startTime: new Date(),
-        isInitiator: true
+        isInitiator: true,
+        hasVideo: hasVideo
       }
       
       setCurrentCall(callSession)
@@ -394,6 +434,9 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
     try {
       setIsCallActive(true)
       setIsIncomingCall(false)
+      
+      // Set video mode based on incoming call
+      setHasVideo(incomingCallData.hasVideo || false)
       
       // Generate encryption keys
       const publicKeyString = await generateEncryptionKeys()
@@ -426,7 +469,8 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
         callee: userEmail,
         status: 'connected',
         startTime: new Date(),
-        isInitiator: false
+        isInitiator: false,
+        hasVideo: incomingCallData.hasVideo || false
       }
       
       setCurrentCall(callSession)
@@ -457,12 +501,18 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
         peerConnectionRef.current = null
       }
       
-      // Clear audio elements
+      // Clear audio/video elements
       if (localAudioRef.current) {
         localAudioRef.current.srcObject = null
       }
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = null
+      }
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = null
+      }
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = null
       }
       
       // Clear crypto keys
@@ -489,6 +539,9 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
       setIsCallActive(false)
       setIsEncryptionEstablished(false)
       setCallDuration(0)
+      setHasVideo(false)
+      setIsVideoEnabled(false)
+      setIsCameraOff(false)
       
       if (durationIntervalRef.current) {
         clearInterval(durationIntervalRef.current)
@@ -524,6 +577,18 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
     }
   }
 
+  // Toggle video
+  const toggleVideo = () => {
+    if (localStreamRef.current) {
+      const videoTrack = localStreamRef.current.getVideoTracks()[0]
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled
+        setIsCameraOff(!videoTrack.enabled)
+        toast(videoTrack.enabled ? 'Camera enabled' : 'Camera disabled')
+      }
+    }
+  }
+
   // Socket event handlers
   useEffect(() => {
     if (!socket) return
@@ -533,7 +598,8 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
       console.log('Incoming call:', data)
       setIncomingCallData(data)
       setIsIncomingCall(true)
-      toast.info(`Incoming call from ${data.callerEmail}`)
+      setHasVideo(data.hasVideo || false)
+      toast.info(`Incoming ${data.hasVideo ? 'video' : 'voice'} call from ${data.callerEmail}`)
     })
 
     // Handle call answered
@@ -698,8 +764,10 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
           Voice calling features are disabled until all permissions are granted.
         </div>
       )}
+
       {/* Ringtone audio element (hidden) */}
       <audio ref={ringtoneRef} src={RINGTONE_URL} loop preload="auto" style={{ display: 'none' }} />
+
       {/* Shared Key Input UI */}
       <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
         <CardHeader>
@@ -739,6 +807,7 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
           </Button>
         </CardContent>
       </Card>
+
       {showKeyWarning && (
         <Alert className="bg-yellow-500/20 border-yellow-500/20 text-yellow-400">
           <AlertCircle className="h-4 w-4" />
@@ -747,13 +816,16 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
           </AlertDescription>
         </Alert>
       )}
+
       {/* Incoming Call Banner (persistent, fixed at top) */}
       {isIncomingCall && incomingCallData && (
         <div className="fixed top-0 left-0 w-full z-50 flex justify-center">
           <div className="bg-blue-900/95 border-b-2 border-blue-400 shadow-lg rounded-b-xl px-6 py-4 flex items-center gap-6 max-w-xl w-full mt-0 animate-fade-in-down">
             <img src="/placeholder-user.jpg" alt="Caller" className="w-12 h-12 rounded-full border-2 border-blue-400" />
             <div className="flex-1 min-w-0">
-              <div className="text-lg font-semibold text-white truncate">Incoming Call</div>
+              <div className="text-lg font-semibold text-white truncate">
+                Incoming {incomingCallData.hasVideo ? 'Video' : 'Voice'} Call
+              </div>
               <div className="text-sm text-blue-200 truncate">{incomingCallData.callerEmail} is calling you</div>
             </div>
             <Button
@@ -783,6 +855,7 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
           </div>
         </div>
       )}
+
       {/* Incoming Call Dialog */}
       <Dialog open={isIncomingCall} onOpenChange={setIsIncomingCall}>
         <DialogContent className="bg-black/90 border-white/10 text-white">
@@ -831,8 +904,8 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Phone className="h-5 w-5 text-green-400" />
-                Active Call
+                {currentCall.hasVideo ? <Video className="h-5 w-5 text-green-400" /> : <Phone className="h-5 w-5 text-green-400" />}
+                Active {currentCall.hasVideo ? 'Video' : 'Voice'} Call
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className={getQualityColor()}>
@@ -851,6 +924,37 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Video Display */}
+            {currentCall.hasVideo && (
+              <div className="grid grid-cols-2 gap-4">
+                {/* Local Video */}
+                <div className="relative">
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-48 object-cover rounded-lg bg-black"
+                  />
+                  <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                    You
+                  </div>
+                </div>
+                {/* Remote Video */}
+                <div className="relative">
+                  <video
+                    ref={remoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-48 object-cover rounded-lg bg-black"
+                  />
+                  <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                    {currentCall.isInitiator ? currentCall.callee : currentCall.caller}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Call Duration */}
             <div className="flex items-center justify-center gap-2 text-lg font-mono">
               <Clock className="h-4 w-4" />
@@ -867,6 +971,17 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
               >
                 {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               </Button>
+              
+              {currentCall.hasVideo && (
+                <Button
+                  onClick={toggleVideo}
+                  variant={isCameraOff ? "destructive" : "outline"}
+                  size="lg"
+                  className="rounded-full w-12 h-12 p-0"
+                >
+                  {isCameraOff ? <VideoOff className="h-5 w-5" /> : <Video className="h-5 w-5" />}
+                </Button>
+              )}
               
               <Button
                 onClick={endCall}
@@ -898,13 +1013,33 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Phone className="h-5 w-5" />
-              Voice Call
+              Voice & Video Call
             </CardTitle>
             <CardDescription className="text-white/60">
-              Make secure, encrypted voice calls with other users
+              Make secure, encrypted voice and video calls with other users
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Call Type Selection */}
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={() => setHasVideo(false)}
+                variant={!hasVideo ? "default" : "outline"}
+                className="flex-1"
+              >
+                <Phone className="h-4 w-4 mr-2" />
+                Voice Call
+              </Button>
+              <Button
+                onClick={() => setHasVideo(true)}
+                variant={hasVideo ? "default" : "outline"}
+                className="flex-1"
+              >
+                <Video className="h-4 w-4 mr-2" />
+                Video Call
+              </Button>
+            </div>
+
             {/* Call Target Input */}
             <div className="space-y-2">
               <Input
@@ -915,11 +1050,11 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
               />
               <Button 
                 onClick={initiateCall}
-                disabled={!callTarget || isCallActive}
+                disabled={!callTarget || isCallActive || !permissionsOk}
                 className="w-full"
               >
-                <Phone className="h-4 w-4 mr-2" />
-                Start Call
+                {hasVideo ? <Video className="h-4 w-4 mr-2" /> : <Phone className="h-4 w-4 mr-2" />}
+                Start {hasVideo ? 'Video' : 'Voice'} Call
               </Button>
             </div>
 
@@ -952,7 +1087,7 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
               <Shield className="h-4 w-4" />
               <AlertDescription>
                 All calls are end-to-end encrypted using AES-256 with secure key exchange.
-                No audio data or keys are stored on our servers.
+                No audio/video data or keys are stored on our servers.
               </AlertDescription>
             </Alert>
           </CardContent>

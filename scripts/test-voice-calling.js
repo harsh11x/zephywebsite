@@ -64,8 +64,13 @@ class MockWebCrypto {
   }
 
   static async deriveKey(algorithm, baseKey, derivedKeyAlgorithm, extractable, keyUsages) {
-    // Mock AES key derivation
-    const derivedKey = crypto.randomBytes(32);
+    // Use actual ECDH key derivation
+    const ecdh = crypto.createECDH('prime256v1');
+    ecdh.setPrivateKey(baseKey.privateKey);
+    
+    const sharedSecret = ecdh.computeSecret(algorithm.public);
+    const derivedKey = crypto.pbkdf2Sync(sharedSecret, 'salt', 1000, 32, 'sha256');
+    
     return {
       key: derivedKey,
       algorithm: derivedKeyAlgorithm,
@@ -76,20 +81,24 @@ class MockWebCrypto {
 
   static async encrypt(algorithm, key, data) {
     const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipher('aes-256-gcm', key.key);
-    cipher.setAAD(iv);
+    const cipher = crypto.createCipherGCM('aes-256-gcm', key.key);
     
     let encrypted = cipher.update(data, 'utf8', 'hex');
     encrypted += cipher.final('hex');
+    const authTag = cipher.getAuthTag();
     
-    return Buffer.from(encrypted, 'hex');
+    return Buffer.concat([iv, authTag, Buffer.from(encrypted, 'hex')]);
   }
 
   static async decrypt(algorithm, key, data) {
-    const decipher = crypto.createDecipher('aes-256-gcm', key.key);
-    decipher.setAAD(algorithm.iv);
+    const iv = data.slice(0, 12);
+    const authTag = data.slice(12, 28);
+    const encrypted = data.slice(28);
     
-    let decrypted = decipher.update(data, 'hex', 'utf8');
+    const decipher = crypto.createDecipherGCM('aes-256-gcm', key.key);
+    decipher.setAuthTag(authTag);
+    
+    let decrypted = decipher.update(encrypted, null, 'utf8');
     decrypted += decipher.final('utf8');
     
     return decrypted;
@@ -127,7 +136,7 @@ class MockSecureVoiceCrypto {
   static async deriveSharedKey(privateKey, publicKey) {
     return await MockWebCrypto.deriveKey(
       { name: 'ECDH', public: publicKey },
-      privateKey,
+      { privateKey: privateKey },
       { name: 'AES-GCM', length: 256 },
       false,
       ['encrypt', 'decrypt']

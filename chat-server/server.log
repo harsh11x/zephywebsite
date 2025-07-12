@@ -1,0 +1,233 @@
+Chat server running on port 3001
+Health check: http://localhost:3001/health
+Connected users: http://localhost:3001/users
+User connected: test1@example.com (DfHBSNqDZIlyAn5bAAAB)
+User disconnected: test1@example.com (DfHBSNqDZIlyAn5bAAAB)
+User connected: test1@example.com (R7DDNF0PsZQH1AXNAAAE)
+User connected: test2@example.com (rNbH-rkex1CcgHAcAAAF)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+User disconnected: test1@example.com (R7DDNF0PsZQH1AXNAAAE)
+User disconnected: test2@example.com (rNbH-rkex1CcgHAcAAAF)
+User connected: test1@example.com (OwCYt32QBBN8A6ZbAAAI)
+User connected: test2@example.com (5kNwKbmzc3zaXGGwAAAJ)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+RAW voice_call_request data: {
+  targetEmail: 'test2@example.com',
+  offer: { type: 'offer', sdp: 'test-sdp' },
+  publicKey: 'test-public-key',
+  callerEmail: 'test1@example.com',
+  hasVideo: false
+}
+Processed voice_call_request: {
+  targetEmail: 'test2@example.com',
+  offer: { type: 'offer', sdp: 'test-sdp' },
+  publicKey: 'test-public-key',
+  callerEmail: 'test1@example.com',
+  hasVideo: false
+}
+📞 Voice call request from test1@example.com to test2@example.com
+EMITTED voice_call_incoming: {
+  callId: '1752346412977',
+  callerEmail: 'test1@example.com',
+  offer: { type: 'offer', sdp: 'test-sdp' },
+  publicKey: 'test-public-key',
+  hasVideo: false,
+  debug: 'VIDEO_FIX_TEST'
+}
+📞 Incoming voice call notification sent to test2@example.com
+📞 Voice call answer from test2@example.com for call 1752346412977
+EMITTED voice_call_answered: {
+  callId: '1752346412977',
+  answer: { type: 'answer', sdp: 'test-sdp' },
+  publicKey: 'test-public-key',
+  calleeEmail: 'test2@example.com',
+  hasVideo: false
+}
+📞 Voice call answer sent to test1@example.com
+User disconnected: test1@example.com (OwCYt32QBBN8A6ZbAAAI)
+User disconnected: test2@example.com (5kNwKbmzc3zaXGGwAAAJ)
+User connected: test1@example.com (upxaMryL6p3d7OdrAAAM)
+User connected: test2@example.com (cvx-03FtVcByifD_AAAN)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+RAW voice_call_request data: {
+  targetEmail: 'test2@example.com',
+  offer: { type: 'offer', sdp: 'test-video-sdp' },
+  publicKey: 'test-public-key',
+  callerEmail: 'test1@example.com',
+  hasVideo: true
+}
+Processed voice_call_request: {
+  targetEmail: 'test2@example.com',
+  offer: { type: 'offer', sdp: 'test-video-sdp' },
+  publicKey: 'test-public-key',
+  callerEmail: 'test1@example.com',
+  hasVideo: true
+}
+📞 Video call request from test1@example.com to test2@example.com
+EMITTED voice_call_incoming: {
+  callId: '1752346419979',
+  callerEmail: 'test1@example.com',
+  offer: { type: 'offer', sdp: 'test-video-sdp' },
+  publicKey: 'test-public-key',
+  hasVideo: true,
+  debug: 'VIDEO_FIX_TEST'
+}
+📞 Incoming video call notification sent to test2@example.com
+📞 Voice call answer from test2@example.com for call 1752346419979
+EMITTED voice_call_answered: {
+  callId: '1752346419979',
+  answer: { type: 'answer', sdp: 'test-video-sdp' },
+  publicKey: 'test-public-key',
+  calleeEmail: 'test2@example.com',
+  hasVideo: true
+}
+📞 Video call answer sent to test1@example.com
+User disconnected: test1@example.com (upxaMryL6p3d7OdrAAAM)
+User disconnected: test2@example.com (cvx-03FtVcByifD_AAAN)
+User connected: test1@example.com (IXpFGuHIxqxUs9khAAAQ)
+User connected: test2@example.com (5s9rj_YzPspog-bNAAAR)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+RAW voice_call_request data: {
+  targetEmail: 'test2@example.com',
+  offer: { type: 'offer', sdp: 'test-sdp' },
+  publicKey: 'test-public-key',
+  callerEmail: 'test1@example.com',
+  hasVideo: false
+}
+Processed voice_call_request: {
+  targetEmail: 'test2@example.com',
+  offer: { type: 'offer', sdp: 'test-sdp' },
+  publicKey: 'test-public-key',
+  callerEmail: 'test1@example.com',
+  hasVideo: false
+}
+📞 Voice call request from test1@example.com to test2@example.com
+EMITTED voice_call_incoming: {
+  callId: '1752346431986',
+  callerEmail: 'test1@example.com',
+  offer: { type: 'offer', sdp: 'test-sdp' },
+  publicKey: 'test-public-key',
+  hasVideo: false,
+  debug: 'VIDEO_FIX_TEST'
+}
+📞 Incoming voice call notification sent to test2@example.com
+📞 Voice call rejected by test2@example.com for call 1752346431986
+📞 Call rejection sent to test1@example.com
+User disconnected: test1@example.com (IXpFGuHIxqxUs9khAAAQ)
+User disconnected: test2@example.com (5s9rj_YzPspog-bNAAAR)
+User connected: test1@example.com (iFgJf1o2P3PIU0-wAAAT)
+📡 Broadcasted available users: test1@example.com (Total: 1)
+📡 Broadcasted available users: test1@example.com (Total: 1)
+📡 Broadcasted available users: test1@example.com (Total: 1)
+User disconnected: test1@example.com (iFgJf1o2P3PIU0-wAAAT)
+User connected: test1@example.com (5-WwaimxfXK2RIpIAAAW)
+User connected: test2@example.com (84Wr7L5KrX6N85RmAAAX)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+📡 Broadcasted available users: test1@example.com, test2@example.com (Total: 2)
+User disconnected: test2@example.com (84Wr7L5KrX6N85RmAAAX)
+📡 Broadcasted available users: test1@example.com (Total: 1)
+User disconnected: test1@example.com (5-WwaimxfXK2RIpIAAAW)
+📡 Broadcasted available users:  (Total: 0)
+User connected: voice-test1@example.com (MdSPz8iHyvxA3CiXAAAa)
+User connected: voice-test2@example.com (JHH_KcTAXTeny0L9AAAb)
+📡 Broadcasted available users: voice-test1@example.com, voice-test2@example.com (Total: 2)
+📡 Broadcasted available users: voice-test1@example.com, voice-test2@example.com (Total: 2)
+RAW voice_call_request data: {
+  targetEmail: 'voice-test2@example.com',
+  offer: { type: 'offer', sdp: 'mock-sdp-offer' },
+  publicKey: 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEJu05ntJAE9NTJNsvAsEHTGYUCemoRRvWW46z7aUmzWHLXpT8Qnls49qd8iaIpmZjbvt1WsoNKe84IhI8b5KD6A==',
+  callerEmail: 'voice-test1@example.com'
+}
+WARNING: hasVideo missing in incoming data, defaulting to false. Data: {
+  targetEmail: 'voice-test2@example.com',
+  offer: { type: 'offer', sdp: 'mock-sdp-offer' },
+  publicKey: 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEJu05ntJAE9NTJNsvAsEHTGYUCemoRRvWW46z7aUmzWHLXpT8Qnls49qd8iaIpmZjbvt1WsoNKe84IhI8b5KD6A==',
+  callerEmail: 'voice-test1@example.com'
+}
+Processed voice_call_request: {
+  targetEmail: 'voice-test2@example.com',
+  offer: { type: 'offer', sdp: 'mock-sdp-offer' },
+  publicKey: 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEJu05ntJAE9NTJNsvAsEHTGYUCemoRRvWW46z7aUmzWHLXpT8Qnls49qd8iaIpmZjbvt1WsoNKe84IhI8b5KD6A==',
+  callerEmail: 'voice-test1@example.com',
+  hasVideo: false
+}
+📞 Voice call request from voice-test1@example.com to voice-test2@example.com
+EMITTED voice_call_incoming: {
+  callId: '1752346582137',
+  callerEmail: 'voice-test1@example.com',
+  offer: { type: 'offer', sdp: 'mock-sdp-offer' },
+  publicKey: 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEJu05ntJAE9NTJNsvAsEHTGYUCemoRRvWW46z7aUmzWHLXpT8Qnls49qd8iaIpmZjbvt1WsoNKe84IhI8b5KD6A==',
+  hasVideo: false,
+  debug: 'VIDEO_FIX_TEST'
+}
+📞 Incoming voice call notification sent to voice-test2@example.com
+📞 Voice call answer from voice-test2@example.com for call 1752346582137
+EMITTED voice_call_answered: {
+  callId: '1752346582137',
+  answer: { type: 'answer', sdp: 'mock-sdp-answer' },
+  publicKey: 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEzpgqsuAURYQ12V4cywC6Z3fs4+WyRAm4L2wLEED/fcrOtG828PvSL9nDxYTREHj38x6aU/xUVRQXYfEuwfmk5Q==',
+  calleeEmail: 'voice-test2@example.com',
+  hasVideo: false
+}
+📞 Voice call answer sent to voice-test1@example.com
+User disconnected: voice-test2@example.com (JHH_KcTAXTeny0L9AAAb)
+User disconnected: voice-test1@example.com (MdSPz8iHyvxA3CiXAAAa)
+📡 Broadcasted available users:  (Total: 0)
+📡 Broadcasted available users:  (Total: 0)
+User connected: voice-test1@example.com (1gmZvTMeFYh4fmKgAAAe)
+User connected: voice-test2@example.com (We36nw40AX8NPD-iAAAf)
+📡 Broadcasted available users: voice-test1@example.com, voice-test2@example.com (Total: 2)
+📡 Broadcasted available users: voice-test1@example.com, voice-test2@example.com (Total: 2)
+RAW voice_call_request data: {
+  targetEmail: 'voice-test2@example.com',
+  offer: { type: 'offer', sdp: 'mock-sdp-offer' },
+  publicKey: 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPchvVN93IHW54GH5iPyEnGetBwhUl8CzqkBXhni9vmGrV3ajO1+ize+gcOPx6N9FHvkAPITYvWc7gLfGpmcUgA==',
+  callerEmail: 'voice-test1@example.com'
+}
+WARNING: hasVideo missing in incoming data, defaulting to false. Data: {
+  targetEmail: 'voice-test2@example.com',
+  offer: { type: 'offer', sdp: 'mock-sdp-offer' },
+  publicKey: 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPchvVN93IHW54GH5iPyEnGetBwhUl8CzqkBXhni9vmGrV3ajO1+ize+gcOPx6N9FHvkAPITYvWc7gLfGpmcUgA==',
+  callerEmail: 'voice-test1@example.com'
+}
+Processed voice_call_request: {
+  targetEmail: 'voice-test2@example.com',
+  offer: { type: 'offer', sdp: 'mock-sdp-offer' },
+  publicKey: 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPchvVN93IHW54GH5iPyEnGetBwhUl8CzqkBXhni9vmGrV3ajO1+ize+gcOPx6N9FHvkAPITYvWc7gLfGpmcUgA==',
+  callerEmail: 'voice-test1@example.com',
+  hasVideo: false
+}
+📞 Voice call request from voice-test1@example.com to voice-test2@example.com
+EMITTED voice_call_incoming: {
+  callId: '1752346714851',
+  callerEmail: 'voice-test1@example.com',
+  offer: { type: 'offer', sdp: 'mock-sdp-offer' },
+  publicKey: 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPchvVN93IHW54GH5iPyEnGetBwhUl8CzqkBXhni9vmGrV3ajO1+ize+gcOPx6N9FHvkAPITYvWc7gLfGpmcUgA==',
+  hasVideo: false,
+  debug: 'VIDEO_FIX_TEST'
+}
+📞 Incoming voice call notification sent to voice-test2@example.com
+📞 Voice call answer from voice-test2@example.com for call 1752346714851
+EMITTED voice_call_answered: {
+  callId: '1752346714851',
+  answer: { type: 'answer', sdp: 'mock-sdp-answer' },
+  publicKey: 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEYcfzd+PLixFR7/eXE700DvpcmMFYmJz0atVlgkzMfZW6U2imcSqySNvoVN2o/dt9eYE7YjIsX0vl2tC5CgZxzQ==',
+  calleeEmail: 'voice-test2@example.com',
+  hasVideo: false
+}
+📞 Voice call answer sent to voice-test1@example.com
+User disconnected: voice-test1@example.com (1gmZvTMeFYh4fmKgAAAe)
+User disconnected: voice-test2@example.com (We36nw40AX8NPD-iAAAf)
