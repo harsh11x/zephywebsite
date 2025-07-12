@@ -179,8 +179,8 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
   // Ringtone audio element (hidden)
   const ringtoneRef = useRef<HTMLAudioElement | null>(null)
 
-  // Check if permissions are OK
-  const permissionsOk = micPermission === 'granted' && notifPermission === 'granted' && cameraPermission === 'granted'
+  // Check if permissions are OK - for voice calls only need mic and notifications, for video calls need all
+  const permissionsOk = micPermission === 'granted' && notifPermission === 'granted' && (hasVideo ? cameraPermission === 'granted' : true)
 
   // On mount, load key from localStorage
   useEffect(() => {
@@ -839,8 +839,8 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
               <Shield className="h-5 w-5" />
               Setup Required: Browser Permissions
             </CardTitle>
-            <CardDescription className="text-blue-200">
-              To make secure voice and video calls, we need your permission to access your microphone, camera, and send notifications.
+            <CardDescription className="text-white/60">
+              To make secure voice and video calls, we need your permission to access your microphone, camera, and send notifications. <b>Camera is only required for video calls.</b>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -940,7 +940,10 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
       {/* Block UI if permissions are not granted */}
       {!permissionsOk && !showPermissionRequest && (
         <div className="text-center text-white/60 text-lg font-light py-12">
-          Voice calling features are disabled until all permissions are granted.
+          {hasVideo 
+            ? "Video calling features are disabled until microphone, camera, and notification permissions are granted."
+            : "Voice calling features are disabled until microphone and notification permissions are granted."
+          }
         </div>
       )}
 

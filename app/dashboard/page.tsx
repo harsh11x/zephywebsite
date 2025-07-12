@@ -65,8 +65,8 @@ export default function Dashboard() {
       color: "from-white/20 to-white/5",
     },
     {
-      title: "Voice Calling",
-      description: "Make secure, end-to-end encrypted voice calls with AES-256 encryption",
+      title: "Voice & Video Call",
+      description: "Make secure, end-to-end encrypted voice and video calls with AES-256 encryption",
       icon: Phone,
       href: "/dashboard/voice",
       color: "from-white/20 to-white/5",
