@@ -306,34 +306,55 @@ async function runTests() {
   console.log('\n🔄 Test 7: Real-time User Availability');
   try {
     const socket1 = io(SERVER_URL, { auth: TEST_USERS[0] });
-    const socket2 = io(SERVER_URL, { auth: TEST_USERS[1] });
-
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    let usersUpdated = false;
-    let initialUsersReceived = false;
+    
+    let userUpdateCount = 0;
+    let usersList = [];
+    let userCountHistory = [];
+    let testPassed = false;
 
     socket1.on('voice_users_available', (users) => {
-      if (!initialUsersReceived) {
-        initialUsersReceived = true;
-        console.log('Initial users received:', users);
-      } else {
-        usersUpdated = true;
-        logTest('Real-time user updates', true, `Available users: ${users.join(', ')}`);
+      userUpdateCount++;
+      usersList = [...users];
+      userCountHistory.push(users.length);
+      console.log(`📡 Received voice_users_available (update #${userUpdateCount}):`, users);
+      console.log(`📊 User count history: [${userCountHistory.join(' → ')}]`);
+      
+      // Test passes if we see the sequence: 1 → 2 → 1 (or 1 → 2 → 1 → 2 → 1, etc.)
+      // We need at least 3 updates with the pattern showing a user connecting and disconnecting
+      if (userCountHistory.length >= 3) {
+        // Look for the pattern where we go from 1 to 2 and back to 1
+        for (let i = 0; i < userCountHistory.length - 2; i++) {
+          if (userCountHistory[i] === 1 && userCountHistory[i + 1] === 2 && userCountHistory[i + 2] === 1) {
+            testPassed = true;
+            console.log(`✅ Found correct sequence at positions ${i}-${i+2}: 1 → 2 → 1`);
+            break;
+          }
+        }
       }
     });
 
-    // Disconnect second user to trigger update
-    setTimeout(() => {
-      console.log('Disconnecting second user...');
-      socket2.disconnect();
-    }, 2000);
-
+    // Wait for initial connection and first users list
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    
+    // Connect second user
+    console.log('Connecting second user...');
+    const socket2 = io(SERVER_URL, { auth: TEST_USERS[1] });
+    
+    // Wait for second user to connect and trigger update
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    
+    // Disconnect second user
+    console.log('Disconnecting second user...');
+    socket2.disconnect();
+    
+    // Wait for final update
     await new Promise((resolve) => {
       setTimeout(() => {
-        logTest('Real-time user availability', usersUpdated, `Users updated: ${usersUpdated}`);
+        console.log(`🔍 Test results: userUpdateCount=${userUpdateCount}, testPassed=${testPassed}, finalUsersList=${usersList.join(', ')}`);
+        console.log(`📊 Final user count history: [${userCountHistory.join(' → ')}]`);
+        logTest('Real-time user availability', testPassed, `Updates received: ${userUpdateCount}, Test passed: ${testPassed}`);
         resolve();
-      }, 6000);
+      }, 5000);
     });
 
     socket1.disconnect();
