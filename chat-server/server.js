@@ -144,9 +144,11 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Check if users are connected
-    const userConnectionsSet = userConnections.get(socket.userEmail);
-    if (!userConnectionsSet || !userConnectionsSet.has(targetEmail)) {
+    // Allow one-way connection: deliver if EITHER user has the other in their connections
+    const senderConnections = userConnections.get(socket.userEmail);
+    const recipientConnections = userConnections.get(targetEmail);
+    const isConnected = (senderConnections && senderConnections.has(targetEmail)) || (recipientConnections && recipientConnections.has(socket.userEmail));
+    if (!isConnected) {
       socket.emit('error', { message: 'You are not connected to this user' });
       return;
     }
@@ -177,9 +179,11 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Check if users are connected
-    const userConnectionsSet = userConnections.get(socket.userEmail);
-    if (!userConnectionsSet || !userConnectionsSet.has(targetEmail)) {
+    // Allow one-way connection: deliver if EITHER user has the other in their connections
+    const senderConnections = userConnections.get(socket.userEmail);
+    const recipientConnections = userConnections.get(targetEmail);
+    const isConnected = (senderConnections && senderConnections.has(targetEmail)) || (recipientConnections && recipientConnections.has(socket.userEmail));
+    if (!isConnected) {
       socket.emit('error', { message: 'You are not connected to this user' });
       return;
     }

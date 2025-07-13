@@ -196,86 +196,43 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
     if (sharedKey) localStorage.setItem('zephy-voice-shared-key', sharedKey)
   }, [sharedKey])
 
-  // Check current permissions on mount
+  // On mount, automatically request permissions
   useEffect(() => {
-    // Check microphone permission
-    navigator.permissions?.query({ name: 'microphone' as PermissionName })
-      .then(result => {
-        setMicPermission(result.state === 'granted' ? 'granted' : result.state === 'denied' ? 'denied' : 'pending')
-      })
-      .catch(() => setMicPermission('pending'))
+    // Request microphone
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(() => setMicPermission('granted'))
+      .catch(() => setMicPermission('denied'));
 
-    // Check camera permission
-    navigator.permissions?.query({ name: 'camera' as PermissionName })
-      .then(result => {
-        setCameraPermission(result.state === 'granted' ? 'granted' : result.state === 'denied' ? 'denied' : 'pending')
-      })
-      .catch(() => setCameraPermission('pending'))
+    // Always request camera permission on mount for smoother video call experience
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(() => setCameraPermission('granted'))
+      .catch(() => setCameraPermission('denied'));
 
-    // Check notification permission
-    if ("Notification" in window) {
-      setNotifPermission(Notification.permission === 'granted' ? 'granted' : Notification.permission === 'denied' ? 'denied' : 'pending')
+    // Request notifications
+    if ("Notification" in window && Notification.permission !== 'granted') {
+      Notification.requestPermission().then(permission => {
+        setNotifPermission(permission === 'granted' ? 'granted' : 'denied');
+      });
+    } else if ("Notification" in window) {
+      setNotifPermission(Notification.permission === 'granted' ? 'granted' : 'denied');
     }
+  }, []);
 
-    // Show permission request if any permissions are pending
-    if (micPermission === 'pending' || cameraPermission === 'pending' || notifPermission === 'pending') {
-      setShowPermissionRequest(true)
+  // After acquiring local stream, always set video ref if available
+  useEffect(() => {
+    if (localStreamRef.current && localVideoRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+      console.log('Set local video stream:', localStreamRef.current);
     }
-  }, [])
+  }, [localStreamRef.current]);
 
-  // Request microphone permission
-  const requestMicrophonePermission = async () => {
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true })
-      setMicPermission('granted')
-      setPermissionRequestStep('camera')
-      toast.success('Microphone permission granted!')
-    } catch (error) {
-      setMicPermission('denied')
-      toast.error('Microphone permission denied. Voice calls will not work.')
+  // After acquiring remote stream, always set video ref if available
+  useEffect(() => {
+    if (remoteStreamRef.current && remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = remoteStreamRef.current;
+      console.log('Set remote video stream:', remoteStreamRef.current);
     }
-  }
-
-  // Request camera permission
-  const requestCameraPermission = async () => {
-    try {
-      await navigator.mediaDevices.getUserMedia({ video: true })
-      setCameraPermission('granted')
-      setPermissionRequestStep('notifications')
-      toast.success('Camera permission granted!')
-    } catch (error) {
-      setCameraPermission('denied')
-      toast.error('Camera permission denied. Video calls will not work.')
-      setPermissionRequestStep('notifications')
-    }
-  }
-
-  // Request notification permission
-  const requestNotificationPermission = async () => {
-    if ("Notification" in window) {
-      const permission = await Notification.requestPermission()
-      setNotifPermission(permission === 'granted' ? 'granted' : 'denied')
-      if (permission === 'granted') {
-        toast.success('Notification permission granted!')
-      } else {
-        toast.error('Notification permission denied. You won\'t receive incoming call alerts.')
-      }
-      setPermissionRequestStep('complete')
-    }
-  }
-
-  // Skip permission request
-  const skipPermissionRequest = () => {
-    setShowPermissionRequest(false)
-    setPermissionRequestStep('intro')
-  }
-
-  // Complete permission setup
-  const completePermissionSetup = () => {
-    setShowPermissionRequest(false)
-    setPermissionRequestStep('intro')
-    toast.success('Permission setup complete!')
-  }
+  }, [remoteStreamRef.current]);
 
   // Generate encryption keys
   const generateEncryptionKeys = async (): Promise<string> => {
@@ -814,7 +771,7 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
           </AlertDescription>
         </Alert>
       )}
-      {cameraPermission === 'denied' && (
+      {cameraPermission === 'denied' && hasVideo && (
         <Alert className="bg-red-500/20 border-red-500/20 text-red-400">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -829,122 +786,6 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
             Notification permission is required for incoming call alerts. Please allow notifications in your browser settings for the best experience.
           </AlertDescription>
         </Alert>
-      )}
-
-      {/* Proactive Permission Request */}
-      {showPermissionRequest && (
-        <Card className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-500/30 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-300">
-              <Shield className="h-5 w-5" />
-              Setup Required: Browser Permissions
-            </CardTitle>
-            <CardDescription className="text-white/60">
-              To make secure voice and video calls, we need your permission to access your microphone, camera, and send notifications. <b>Camera is only required for video calls.</b>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Permission Status */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className={`flex items-center gap-2 p-3 rounded-lg ${micPermission === 'granted' ? 'bg-green-500/20 border-green-500/30' : micPermission === 'denied' ? 'bg-red-500/20 border-red-500/30' : 'bg-yellow-500/20 border-yellow-500/30'} border`}>
-                <Mic className={`h-4 w-4 ${micPermission === 'granted' ? 'text-green-400' : micPermission === 'denied' ? 'text-red-400' : 'text-yellow-400'}`} />
-                <span className="text-sm font-medium">Microphone</span>
-                {micPermission === 'granted' && <CheckCircle className="h-4 w-4 text-green-400 ml-auto" />}
-                {micPermission === 'denied' && <X className="h-4 w-4 text-red-400 ml-auto" />}
-              </div>
-              
-              <div className={`flex items-center gap-2 p-3 rounded-lg ${cameraPermission === 'granted' ? 'bg-green-500/20 border-green-500/30' : cameraPermission === 'denied' ? 'bg-red-500/20 border-red-500/30' : 'bg-yellow-500/20 border-yellow-500/30'} border`}>
-                <Video className={`h-4 w-4 ${cameraPermission === 'granted' ? 'text-green-400' : cameraPermission === 'denied' ? 'text-red-400' : 'text-yellow-400'}`} />
-                <span className="text-sm font-medium">Camera</span>
-                {cameraPermission === 'granted' && <CheckCircle className="h-4 w-4 text-green-400 ml-auto" />}
-                {cameraPermission === 'denied' && <X className="h-4 w-4 text-red-400 ml-auto" />}
-              </div>
-              
-              <div className={`flex items-center gap-2 p-3 rounded-lg ${notifPermission === 'granted' ? 'bg-green-500/20 border-green-500/30' : notifPermission === 'denied' ? 'bg-red-500/20 border-red-500/30' : 'bg-yellow-500/20 border-yellow-500/30'} border`}>
-                <ShieldCheck className={`h-4 w-4 ${notifPermission === 'granted' ? 'text-green-400' : notifPermission === 'denied' ? 'text-red-400' : 'text-yellow-400'}`} />
-                <span className="text-sm font-medium">Notifications</span>
-                {notifPermission === 'granted' && <CheckCircle className="h-4 w-4 text-green-400 ml-auto" />}
-                {notifPermission === 'denied' && <X className="h-4 w-4 text-red-400 ml-auto" />}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                onClick={requestMicrophonePermission}
-                disabled={micPermission === 'granted'}
-                className={`${micPermission === 'granted' ? 'bg-green-600/50 text-green-300' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-                size="sm"
-              >
-                <Mic className="h-4 w-4 mr-2" />
-                {micPermission === 'granted' ? 'Microphone Granted' : 'Grant Microphone'}
-              </Button>
-              
-              <Button
-                onClick={requestCameraPermission}
-                disabled={cameraPermission === 'granted'}
-                className={`${cameraPermission === 'granted' ? 'bg-green-600/50 text-green-300' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-                size="sm"
-              >
-                <Video className="h-4 w-4 mr-2" />
-                {cameraPermission === 'granted' ? 'Camera Granted' : 'Grant Camera'}
-              </Button>
-              
-              <Button
-                onClick={requestNotificationPermission}
-                disabled={notifPermission === 'granted'}
-                className={`${notifPermission === 'granted' ? 'bg-green-600/50 text-green-300' : 'bg-purple-600 hover:bg-purple-700 text-white'}`}
-                size="sm"
-              >
-                <ShieldCheck className="h-4 w-4 mr-2" />
-                {notifPermission === 'granted' ? 'Notifications Granted' : 'Grant Notifications'}
-              </Button>
-            </div>
-
-            {/* Grant All Button */}
-            <div className="flex gap-2">
-              <Button
-                onClick={() => {
-                  requestMicrophonePermission()
-                  requestCameraPermission()
-                  requestNotificationPermission()
-                }}
-                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
-                size="lg"
-              >
-                <ShieldCheck className="h-4 w-4 mr-2" />
-                Grant All Permissions
-              </Button>
-              
-              <Button
-                onClick={skipPermissionRequest}
-                variant="outline"
-                className="border-white/20 text-white/60 hover:text-white"
-                size="lg"
-              >
-                Skip for Now
-              </Button>
-            </div>
-
-            {/* Info */}
-            <div className="text-xs text-blue-300/80">
-              💡 <strong>Why do we need these permissions?</strong><br/>
-              • <strong>Microphone:</strong> Required for voice calls<br/>
-              • <strong>Camera:</strong> Required for video calls<br/>
-              • <strong>Notifications:</strong> Required for incoming call alerts
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Block UI if permissions are not granted */}
-      {!permissionsOk && !showPermissionRequest && (
-        <div className="text-center text-white/60 text-lg font-light py-12">
-          {hasVideo 
-            ? "Video calling features are disabled until microphone, camera, and notification permissions are granted."
-            : "Voice calling features are disabled until microphone and notification permissions are granted."
-          }
-        </div>
       )}
 
       {/* Ringtone audio element (hidden) */}
@@ -1079,58 +920,6 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Permission Request UI */}
-      {showPermissionRequest && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-black/90 border-white/10 text-white p-6 rounded-lg shadow-lg max-w-md w-full">
-          <h3 className="text-xl font-bold mb-2">Permission Required</h3>
-          <p className="text-white/80 mb-4">
-            To make secure voice and video calls, we need a few permissions from your browser.
-            Please click "Grant All" to enable all call features.
-          </p>
-          <div className="flex flex-col gap-2">
-            <Button
-              onClick={requestMicrophonePermission}
-              className="bg-green-600 hover:bg-green-700 text-white"
-              size="lg"
-            >
-              <Mic className="h-4 w-4 mr-2" />
-              Grant Microphone
-            </Button>
-            <Button
-              onClick={requestCameraPermission}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-              size="lg"
-            >
-              <Video className="h-4 w-4 mr-2" />
-              Grant Camera
-            </Button>
-            <Button
-              onClick={requestNotificationPermission}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-              size="lg"
-            >
-              <ShieldCheck className="h-4 w-4 mr-2" />
-              Grant Notifications
-            </Button>
-            <Button
-              onClick={skipPermissionRequest}
-              variant="outline"
-              className="border-white/20 text-white/60 hover:text-white"
-              size="lg"
-            >
-              Skip All
-            </Button>
-            <Button
-              onClick={completePermissionSetup}
-              className="bg-gray-800 hover:bg-gray-700 text-white"
-              size="lg"
-            >
-              Grant All
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Call Interface */}
       {isCallActive && currentCall ? (
@@ -1327,6 +1116,11 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
           </CardContent>
         </Card>
       )}
+      {/* Always render video elements (hidden) */}
+      <div style={{ display: 'none' }}>
+        <video ref={localVideoRef} autoPlay muted playsInline />
+        <video ref={remoteVideoRef} autoPlay playsInline />
+      </div>
     </div>
   )
 } 

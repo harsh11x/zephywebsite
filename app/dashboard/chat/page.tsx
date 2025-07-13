@@ -80,6 +80,22 @@ interface ChatSession {
   unreadCount: number
 }
 
+// Helper to get sorted connection id
+function getSortedConnectionId(email1: string, email2: string) {
+  return [email1, email2].sort().join('_');
+}
+
+// Helper to merge all messages for a given email across all sessions
+function mergeMessagesForEmail(chatSessions: Map<string, ChatSession>, email: string): Message[] {
+  let merged: Message[] = [];
+  for (const session of chatSessions.values()) {
+    if (session.connectionId.includes(email)) {
+      merged = merged.concat(session.messages);
+    }
+  }
+  return merged;
+}
+
 export default function ChatPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
@@ -108,9 +124,10 @@ export default function ChatPage() {
 
   // Helper function to get current chat session
   const getCurrentChatSession = () => {
-    if (!selectedConnection) return null
-    return chatSessions.get(selectedConnection.id)
-  }
+    if (!selectedConnection || !user) return null;
+    const sessionId = getSortedConnectionId(selectedConnection.email, (user as any).email);
+    return chatSessions.get(sessionId);
+  };
 
   // Helper function to get current messages
   const getCurrentMessages = () => {
@@ -201,6 +218,35 @@ export default function ChatPage() {
     if (encryptionKey) localStorage.setItem('zephy-single-encryption-key', encryptionKey)
   }, [encryptionKey])
 
+  // --- PERSISTENCE: Load chatSessions from localStorage on mount ---
+  useEffect(() => {
+    try {
+      const savedSessions = localStorage.getItem('zephy-chat-sessions');
+      if (savedSessions) {
+        const parsed = JSON.parse(savedSessions);
+        // Convert plain object back to Map
+        const restored = new Map<string, ChatSession>(Object.entries(parsed));
+        setChatSessions(restored);
+      }
+    } catch (err) {
+      console.error('Failed to load chat sessions from localStorage:', err);
+    }
+  }, []);
+
+  // --- PERSISTENCE: Save chatSessions to localStorage on every update ---
+  useEffect(() => {
+    try {
+      // Convert Map to plain object for serialization
+      const obj: Record<string, ChatSession> = {};
+      chatSessions.forEach((session, key) => {
+        obj[key] = session;
+      });
+      localStorage.setItem('zephy-chat-sessions', JSON.stringify(obj));
+    } catch (err) {
+      console.error('Failed to save chat sessions to localStorage:', err);
+    }
+  }, [chatSessions]);
+
   useEffect(() => {
     if (!loading && !user) {
       router.push("/auth")
@@ -274,92 +320,95 @@ export default function ChatPage() {
 
       newSocket.on('message_received', async (message: Message) => {
         console.log('📨 Message received:', message)
+        let displayMessage = { ...message };
+        // Attempt to decrypt if encrypted
+        if (message.encrypted && message.type === 'encrypted_text' && message.content) {
+          try {
+            const decryptedContent = await decryptText(message.content, encryptionKey);
+            displayMessage = {
+              ...message,
+              content: decryptedContent,
+              decrypted: true
+            };
+          } catch (err) {
+            displayMessage = {
+              ...message,
+              content: '[Encrypted message - decryption failed]',
+              decrypted: false
+            };
+          }
+        }
         
         // Find the connection ID for this sender
-        const senderConnection = connections.find(conn => conn.email === message.sender)
+        let senderConnection = connections.find(conn => conn.email === message.sender)
         if (!senderConnection) {
-          console.log('❌ No connection found for sender:', message.sender)
-          return
+          // Always generate id as sorted emails
+          const newConnection = {
+            id: getSortedConnectionId(message.sender, (user as any).email),
+            email: message.sender,
+            isOnline: true,
+            lastSeen: new Date()
+          }
+          setConnections(prev => {
+            // Remove any existing connection with the same email, then add the new one
+            const filtered = prev.filter(conn => conn.email !== message.sender)
+            // Migrate chat session if needed
+            setChatSessions(prevSessions => {
+              let foundSessionId = null;
+              for (const [id, session] of prevSessions.entries()) {
+                if (session.connectionId !== newConnection.id && session.connectionId.includes(message.sender)) {
+                  foundSessionId = id;
+                  break;
+                }
+              }
+              if (foundSessionId) {
+                const oldSession = prevSessions.get(foundSessionId);
+                const newSessions = new Map(prevSessions);
+                newSessions.delete(foundSessionId);
+                // Merge messages if new session already exists
+                const existing = newSessions.get(newConnection.id);
+                newSessions.set(newConnection.id, {
+                  connectionId: newConnection.id,
+                  messages: [...(existing?.messages || []), ...(oldSession?.messages || [])],
+                  lastActivity: new Date(),
+                  unreadCount: 0
+                });
+                return newSessions;
+              }
+              return prevSessions;
+            });
+            return [...filtered, newConnection]
+          })
+          senderConnection = newConnection
+          console.log('➕ Auto-added connection for sender:', message.sender)
         }
+        // If still not found, return early to avoid undefined errors
+        if (!senderConnection) return;
         
         // Create or get the chat session for this connection
         const session = getOrCreateChatSession(senderConnection.id)
         
-        // Always try to decrypt if the message is encrypted
-        if (message.encrypted && message.type === 'encrypted_text' && message.content) {
-          try {
-            console.log('🔓 Attempting to decrypt message with key:', encryptionKey)
-            const decryptedContent = await decryptText(message.content, encryptionKey)
-            console.log('✅ Message decrypted successfully:', decryptedContent)
-            
-            // Add decrypted message to the correct session
-            setChatSessions(prev => {
-              const newSessions = new Map(prev)
-              const currentSession = newSessions.get(senderConnection.id) || session
-              
-              // Increment unread count if this connection is not currently selected
-              const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
-              
-              newSessions.set(senderConnection.id, {
-                ...currentSession,
-                messages: [...currentSession.messages, {
-                  ...message,
-                  content: decryptedContent,
-                  decrypted: true
-                }],
-                lastActivity: new Date(),
-                unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
-              })
-              
-              return newSessions
-            })
-            return
-          } catch (err) {
-            console.log('❌ Decryption failed:', err)
-            // Add encrypted message with error to the correct session
-            setChatSessions(prev => {
-              const newSessions = new Map(prev)
-              const currentSession = newSessions.get(senderConnection.id) || session
-              
-              // Increment unread count if this connection is not currently selected
-              const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
-              
-              newSessions.set(senderConnection.id, {
-                ...currentSession,
-                messages: [...currentSession.messages, { 
-                  ...message, 
-                  content: "[Encrypted message - decryption failed]",
-                  decrypted: false 
-                }],
-                lastActivity: new Date(),
-                unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
-              })
-              
-              return newSessions
-            })
-            toast.error("Failed to decrypt message")
-            return
-          }
-        }
-        
-        // Handle plain text messages - add to correct session
-        console.log('📝 Adding plain message to chat session:', senderConnection.id)
+        // Add the decrypted message to the correct session
         setChatSessions(prev => {
-          const newSessions = new Map(prev)
-          const currentSession = newSessions.get(senderConnection.id) || session
-          
-          // Increment unread count if this connection is not currently selected
-          const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
-          
-          newSessions.set(senderConnection.id, {
-            ...currentSession,
-            messages: [...currentSession.messages, message],
+          const sessionId = getSortedConnectionId(message.sender, (user as any).email);
+          const currentSession = prev.get(sessionId) || {
+            connectionId: sessionId,
+            messages: [],
             lastActivity: new Date(),
-            unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
-          })
-          
-          return newSessions
-        })
+            unreadCount: 0
+          };
+          // Append the new message to the existing messages array
+          const updatedMessages = [...currentSession.messages, displayMessage];
+          const newSessions = new Map(prev);
+          newSessions.set(sessionId, {
+            ...currentSession,
+            messages: updatedMessages,
+            lastActivity: new Date(),
+            unreadCount: currentSession.unreadCount + 1
+          });
+          console.log('After setChatSessions (message_received):', [...newSessions.keys()], newSessions);
+          return newSessions;
+        });
       })
 
       newSocket.on('file_received', async (message: Message) => {
@@ -403,25 +452,24 @@ export default function ChatPage() {
             
             // Add decrypted file to the correct session
             setChatSessions(prev => {
-              const newSessions = new Map(prev)
-              const currentSession = newSessions.get(senderConnection.id) || session
-              
-              // Increment unread count if this connection is not currently selected
-              const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
-              
-              newSessions.set(senderConnection.id, {
-                ...currentSession,
-                messages: [...currentSession.messages, {
-                  ...message,
-                  fileUrl: decryptedUrl,
-                  fileName: result.originalName,
-                  decrypted: true
-                }],
+              const sessionId = getSortedConnectionId(message.sender, (user as any).email);
+              const currentSession = prev.get(sessionId) || {
+                connectionId: sessionId,
+                messages: [],
                 lastActivity: new Date(),
-                unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
-              })
-              
-              return newSessions
+                unreadCount: 0
+              };
+              // Append the new message to the existing messages array
+              const updatedMessages = [...currentSession.messages, message];
+              const newSessions = new Map(prev);
+              newSessions.set(sessionId, {
+                ...currentSession,
+                messages: updatedMessages,
+                lastActivity: new Date(),
+                unreadCount: currentSession.unreadCount + 1
+              });
+              console.log('After setChatSessions (file_received):', [...newSessions.keys()], newSessions);
+              return newSessions;
             })
             toast.success(`Received decrypted file: ${result.originalName}`)
             return
@@ -429,24 +477,24 @@ export default function ChatPage() {
             console.log('❌ File decryption failed:', err)
             // Add encrypted file with error to the correct session
             setChatSessions(prev => {
-              const newSessions = new Map(prev)
-              const currentSession = newSessions.get(senderConnection.id) || session
-              
-              // Increment unread count if this connection is not currently selected
-              const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
-              
-              newSessions.set(senderConnection.id, {
-                ...currentSession,
-                messages: [...currentSession.messages, { 
-                  ...message, 
-                  content: `[Encrypted file - decryption failed: ${message.fileName}]`,
-                  decrypted: false 
-                }],
+              const sessionId = getSortedConnectionId(message.sender, (user as any).email);
+              const currentSession = prev.get(sessionId) || {
+                connectionId: sessionId,
+                messages: [],
                 lastActivity: new Date(),
-                unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
-              })
-              
-              return newSessions
+                unreadCount: 0
+              };
+              // Append the new message to the existing messages array
+              const updatedMessages = [...currentSession.messages, message];
+              const newSessions = new Map(prev);
+              newSessions.set(sessionId, {
+                ...currentSession,
+                messages: updatedMessages,
+                lastActivity: new Date(),
+                unreadCount: currentSession.unreadCount + 1
+              });
+              console.log('After setChatSessions (file_received):', [...newSessions.keys()], newSessions);
+              return newSessions;
             })
             toast.error("Failed to decrypt file")
             return
@@ -456,20 +504,24 @@ export default function ChatPage() {
         // Handle plain files - add to correct session
         console.log('📁 Adding plain file to chat session:', senderConnection.id)
         setChatSessions(prev => {
-          const newSessions = new Map(prev)
-          const currentSession = newSessions.get(senderConnection.id) || session
-          
-          // Increment unread count if this connection is not currently selected
-          const shouldIncrementUnread = selectedConnection?.id !== senderConnection.id
-          
-          newSessions.set(senderConnection.id, {
-            ...currentSession,
-            messages: [...currentSession.messages, message],
+          const sessionId = getSortedConnectionId(message.sender, (user as any).email);
+          const currentSession = prev.get(sessionId) || {
+            connectionId: sessionId,
+            messages: [],
             lastActivity: new Date(),
-            unreadCount: shouldIncrementUnread ? currentSession.unreadCount + 1 : currentSession.unreadCount
-          })
-          
-          return newSessions
+            unreadCount: 0
+          };
+          // Append the new message to the existing messages array
+          const updatedMessages = [...currentSession.messages, message];
+          const newSessions = new Map(prev);
+          newSessions.set(sessionId, {
+            ...currentSession,
+            messages: updatedMessages,
+            lastActivity: new Date(),
+            unreadCount: currentSession.unreadCount + 1
+          });
+          console.log('After setChatSessions (file_received):', [...newSessions.keys()], newSessions);
+          return newSessions;
         })
         toast.success(`Received file: ${message.fileName}`)
       })
@@ -500,7 +552,45 @@ export default function ChatPage() {
     if (!connectingEmail || !socket || !encryptionKey) return
     setIsConnecting(true)
     try {
+      // Always use sorted id for consistency
+      const connectionId = getSortedConnectionId(connectingEmail, (user as any).email)
       socket.emit('connect_to_user', { targetEmail: connectingEmail })
+      setConnections(prev => {
+        // Remove any existing connection with the same email, then add the new one
+        const filtered = prev.filter(conn => conn.email !== connectingEmail)
+        const newConn = {
+          id: connectionId,
+          email: connectingEmail,
+          isOnline: true,
+          lastSeen: new Date()
+        }
+        // Migrate chat session if needed
+        setChatSessions(prevSessions => {
+          let foundSessionId = null;
+          for (const [id, session] of prevSessions.entries()) {
+            if (session.connectionId !== newConn.id && session.connectionId.includes(connectingEmail)) {
+              foundSessionId = id;
+              break;
+            }
+          }
+          if (foundSessionId) {
+            const oldSession = prevSessions.get(foundSessionId);
+            const newSessions = new Map(prevSessions);
+            newSessions.delete(foundSessionId);
+            // Merge messages if new session already exists
+            const existing = newSessions.get(newConn.id);
+            newSessions.set(newConn.id, {
+              connectionId: newConn.id,
+              messages: [...(existing?.messages || []), ...(oldSession?.messages || [])],
+              lastActivity: new Date(),
+              unreadCount: 0
+            });
+            return newSessions;
+          }
+          return prevSessions;
+        });
+        return [...filtered, newConn];
+      })
       setConnectingEmail("")
     } catch (error) {
       toast.error("Failed to connect to user")
@@ -548,7 +638,7 @@ export default function ChatPage() {
     // Always encrypt if encryption is enabled
     if (encryptionKey) {
       try {
-        console.log('🔓 Encrypting message with key:', encryptionKey)
+        console.log('�� Encrypting message with key:', encryptionKey)
         console.log('🔑 Key details:', { key: encryptionKey })
         content = await encryptText(newMessage, encryptionKey)
         type = 'encrypted_text'
@@ -581,21 +671,23 @@ export default function ChatPage() {
 
           // Add the original plain text message to the chat for the sender
       setChatSessions(prev => {
-        const newSessions = new Map(prev)
-        const currentSession = newSessions.get(selectedConnection.id) || {
-          connectionId: selectedConnection.id,
+        const sessionId = getSortedConnectionId(selectedConnection.email, (user as any).email);
+        const currentSession = prev.get(sessionId) || {
+          connectionId: sessionId,
           messages: [],
           lastActivity: new Date(),
           unreadCount: 0
         }
       
-      newSessions.set(selectedConnection.id, {
-        ...currentSession,
-        messages: [...currentSession.messages, {
+      const updatedMessages = [...currentSession.messages, {
           ...message,
           content: newMessage, // Show plain text to sender
           decrypted: true
-        }],
+        }];
+      const newSessions = new Map(prev);
+      newSessions.set(sessionId, {
+        ...currentSession,
+        messages: updatedMessages,
         lastActivity: new Date()
       })
       
@@ -678,21 +770,23 @@ export default function ChatPage() {
 
       // Add the original file message to the chat for the sender
       setChatSessions(prev => {
-        const newSessions = new Map(prev)
-        const currentSession = newSessions.get(selectedConnection.id) || {
-          connectionId: selectedConnection.id,
+        const sessionId = getSortedConnectionId(selectedConnection.email, (user as any).email);
+        const currentSession = prev.get(sessionId) || {
+          connectionId: sessionId,
           messages: [],
           lastActivity: new Date(),
           unreadCount: 0
         }
         
-        newSessions.set(selectedConnection.id, {
-          ...currentSession,
-          messages: [...currentSession.messages, {
+        const updatedMessages = [...currentSession.messages, {
             ...message,
             fileName: file.name, // Show original filename to sender
             decrypted: true
-          }],
+          }];
+        const newSessions = new Map(prev);
+        newSessions.set(sessionId, {
+          ...currentSession,
+          messages: updatedMessages,
           lastActivity: new Date()
         })
         
@@ -841,7 +935,8 @@ export default function ChatPage() {
                         No connections yet. Add someone by email to start chatting.
                       </p>
                     ) : (
-                      connections.map((connection) => (
+                      // Deduplicate connections by id before rendering
+                      Array.from(new Map(connections.map(conn => [conn.id, conn])).values()).map((connection: ChatConnection) => (
                         <div
                           key={connection.id}
                           className={`p-3 rounded-lg transition-all ${

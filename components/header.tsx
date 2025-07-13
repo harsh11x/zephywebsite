@@ -34,18 +34,20 @@ export default function Header() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
-      className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-xl"
+      style={{ width: '100%' }}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl flex h-20 items-center justify-between">
         <div className="flex items-center">
           <Link href="/" className="flex items-center space-x-4 group">
-            <motion.div
-              whileHover={{ rotate: 180 }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
-              className="p-2 bg-white/10 backdrop-blur-sm"
-            >
-              <Shield className="h-6 w-6 text-white" />
-            </motion.div>
+            <div className="p-2 bg-white/10 backdrop-blur-sm">
+              <motion.div
+                whileHover={{ rotate: 180 }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+                style={{ display: 'inline-block' }}
+              >
+                <Shield className="h-6 w-6 text-white" />
+              </motion.div>
+            </div>
             <div className="flex flex-col">
               <span className="text-xl font-light text-white tracking-wide">ZEPHYRN</span>
               <span className="text-xs text-white/40 font-light tracking-[0.2em]">SECURITIES</span>
@@ -87,7 +89,7 @@ export default function Header() {
                 <span className="text-xs text-white/40 tracking-[0.2em]">SECURITIES</span>
               </div>
             </Link>
-            <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
+            <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6 flex flex-col gap-8">
               <div className="flex flex-col space-y-6">
                 {navigation.map((item) => (
                   <Link
@@ -100,6 +102,25 @@ export default function Header() {
                   </Link>
                 ))}
               </div>
+              {/* User actions for mobile */}
+              {user ? (
+                <div className="flex flex-col space-y-4 border-t border-white/10 pt-6">
+                  <Link href="/dashboard" onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-white/80 hover:text-white text-base font-light">
+                    <User className="h-4 w-4" /> Command Center
+                  </Link>
+                  <Link href="/admin" onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-white/80 hover:text-white text-base font-light">
+                    <Settings className="h-4 w-4" /> Admin Console
+                  </Link>
+                  <button onClick={() => { setIsOpen(false); logout(); }} className="flex items-center gap-2 text-white/60 hover:text-white text-base font-light">
+                    <LogOut className="h-4 w-4" /> Secure Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col space-y-4 border-t border-white/10 pt-6">
+                  <Link href="/auth" onClick={() => setIsOpen(false)} className="text-white/60 hover:text-white text-base font-light">Sign In</Link>
+                  <Link href="/pricing" onClick={() => setIsOpen(false)} className="bg-white text-black hover:bg-white/90 font-medium px-6 py-2 rounded-none text-base">Start Trial</Link>
+                </div>
+              )}
             </div>
           </SheetContent>
         </Sheet>
