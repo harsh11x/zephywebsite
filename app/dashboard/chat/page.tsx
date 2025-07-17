@@ -138,18 +138,19 @@ export default function ChatPage() {
 
   // Helper function to add message to current chat session
   const addMessageToCurrentSession = (message: Message) => {
-    if (!selectedConnection) return
+    if (!selectedConnection || !user) return
 
     setChatSessions(prev => {
       const newSessions = new Map(prev)
-      const currentSession = newSessions.get(selectedConnection.id) || {
-        connectionId: selectedConnection.id,
+      const sessionKey = getSortedConnectionId(selectedConnection.email, (user as any).email)
+      const currentSession = newSessions.get(sessionKey) || {
+        connectionId: sessionKey,
         messages: [],
         lastActivity: new Date(),
         unreadCount: 0
       }
       
-      newSessions.set(selectedConnection.id, {
+      newSessions.set(sessionKey, {
         ...currentSession,
         messages: [...currentSession.messages, message],
         lastActivity: new Date()
@@ -161,27 +162,29 @@ export default function ChatPage() {
 
   // Helper function to create or get chat session
   const getOrCreateChatSession = (connectionId: string): ChatSession => {
-    const existing = chatSessions.get(connectionId)
+    const sessionKey = connectionId
+    const existing = chatSessions.get(sessionKey)
     if (existing) return existing
     
     const newSession: ChatSession = {
-      connectionId,
+      connectionId: sessionKey,
       messages: [],
       lastActivity: new Date(),
       unreadCount: 0
     }
     
-    setChatSessions(prev => new Map(prev).set(connectionId, newSession))
+    setChatSessions(prev => new Map(prev).set(sessionKey, newSession))
     return newSession
   }
 
   // Helper function to mark messages as read for a connection
   const markConnectionAsRead = (connectionId: string) => {
+    const sessionKey = connectionId
     setChatSessions(prev => {
       const newSessions = new Map(prev)
-      const session = newSessions.get(connectionId)
+      const session = newSessions.get(sessionKey)
       if (session) {
-        newSessions.set(connectionId, {
+        newSessions.set(sessionKey, {
           ...session,
           unreadCount: 0
         })
@@ -192,11 +195,12 @@ export default function ChatPage() {
 
   // Helper function to increment unread count for a connection
   const incrementUnreadCount = (connectionId: string) => {
+    const sessionKey = connectionId
     setChatSessions(prev => {
       const newSessions = new Map(prev)
-      const session = newSessions.get(connectionId)
+      const session = newSessions.get(sessionKey)
       if (session) {
-        newSessions.set(connectionId, {
+        newSessions.set(sessionKey, {
           ...session,
           unreadCount: session.unreadCount + 1
         })
@@ -600,32 +604,9 @@ export default function ChatPage() {
     }
   }
 
-  const disconnectFromUser = async () => {
-    if (!selectedConnection || !socket) return
-
-    try {
-      // Remove the connection from local state
-      setConnections(prev => prev.filter(conn => conn.id !== selectedConnection.id))
-      setSelectedConnection(null)
-      // Clear messages for the disconnected user
-      setChatSessions(prev => {
-        const newSessions = new Map(prev)
-        newSessions.delete(selectedConnection.id)
-        return newSessions
-      })
-      
-      // Emit disconnect event to server (if needed)
-      socket.emit('disconnect_from_user', { targetEmail: selectedConnection.email })
-      
-      toast.success(`Disconnected from ${selectedConnection.email}`)
-    } catch (error) {
-      toast.error("Failed to disconnect from user")
-    }
-  }
-
   // Enhanced sendMessage with robust key validation
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConnection || !socket) return
+    if (!newMessage.trim() || !selectedConnection || !socket || !user) return
 
     console.log('📤 Sending message to:', selectedConnection.email)
     console.log('🔐 Encryption enabled:', encryptionKey)
@@ -672,9 +653,9 @@ export default function ChatPage() {
 
           // Add the original plain text message to the chat for the sender
       setChatSessions(prev => {
-        const sessionId = getSortedConnectionId(selectedConnection.email, (user as any).email);
-        const currentSession = prev.get(sessionId) || {
-          connectionId: sessionId,
+        const sessionKey = getSortedConnectionId(selectedConnection.email, (user as any).email)
+        const currentSession = prev.get(sessionKey) || {
+          connectionId: sessionKey,
           messages: [],
           lastActivity: new Date(),
           unreadCount: 0
@@ -686,7 +667,7 @@ export default function ChatPage() {
           decrypted: true
         }];
       const newSessions = new Map(prev);
-      newSessions.set(sessionId, {
+      newSessions.set(sessionKey, {
         ...currentSession,
         messages: updatedMessages,
         lastActivity: new Date()
@@ -699,7 +680,7 @@ export default function ChatPage() {
 
   // Enhanced sendFile with robust key validation
   const sendFile = async (file: File) => {
-    if (!selectedConnection || !socket) return
+    if (!selectedConnection || !socket || !user) return
 
     console.log('📁 Sending file to:', selectedConnection.email)
     console.log('🔐 Encryption enabled:', encryptionKey)
@@ -771,9 +752,9 @@ export default function ChatPage() {
 
       // Add the original file message to the chat for the sender
       setChatSessions(prev => {
-        const sessionId = getSortedConnectionId(selectedConnection.email, (user as any).email);
-        const currentSession = prev.get(sessionId) || {
-          connectionId: sessionId,
+        const sessionKey = getSortedConnectionId(selectedConnection.email, (user as any).email)
+        const currentSession = prev.get(sessionKey) || {
+          connectionId: sessionKey,
           messages: [],
           lastActivity: new Date(),
           unreadCount: 0
@@ -785,7 +766,7 @@ export default function ChatPage() {
             decrypted: true
           }];
         const newSessions = new Map(prev);
-        newSessions.set(sessionId, {
+        newSessions.set(sessionKey, {
           ...currentSession,
           messages: updatedMessages,
           lastActivity: new Date()
@@ -848,6 +829,25 @@ export default function ChatPage() {
         return 'Disconnected'
     }
   }
+
+  const disconnectFromUser = async () => {
+    if (!selectedConnection || !socket || !user) return;
+
+    try {
+      setConnections(prev => prev.filter(conn => conn.id !== selectedConnection.id));
+      setSelectedConnection(null);
+      setChatSessions(prev => {
+        const newSessions = new Map(prev);
+        const sessionKey = getSortedConnectionId(selectedConnection.email, (user as any).email);
+        newSessions.delete(sessionKey);
+        return newSessions;
+      });
+      socket.emit('disconnect_from_user', { targetEmail: selectedConnection.email });
+      toast.success(`Disconnected from ${selectedConnection.email}`);
+    } catch (error) {
+      toast.error("Failed to disconnect from user");
+    }
+  };
 
   if (loading) {
     return (
@@ -1092,9 +1092,9 @@ export default function ChatPage() {
                   <ScrollArea className="h-[400px] border border-white/10 rounded-lg p-6">
                     <div className="space-y-6">
                       {getCurrentMessages().length === 0 ? (
-                        <p className="text-white/40 text-sm text-center py-12">
+                        <div className="text-white/40 text-sm text-center py-12">
                           No messages yet. Start the conversation!
-                        </p>
+                        </div>
                       ) : (
                         getCurrentMessages().map((message) => {
                           const isSender = message.sender === (user as any).email;
