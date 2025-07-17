@@ -140,44 +140,46 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
             </TabsList>
 
             <TabsContent value="guide" className="space-y-6">
-              {setupSteps.map((step, index) => (
-                <motion.div
-                  key={step.step}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                >
-                  <Card className="frosted-glass">
-                    <CardHeader>
-                      <CardTitle className="text-white flex items-center">
-                        <div className="p-2 bg-blue-600 rounded-lg mr-3 text-white font-bold text-sm">{step.step}</div>
-                        {step.title}
-                      </CardTitle>
-                      <CardDescription className="text-slate-300">{step.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2">
-                        {step.details?.map((detail, detailIndex) => (
-                          <li key={detailIndex} className="flex items-start space-x-2 text-slate-300">
-                            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0" />
-                            <span className="text-sm">{detail}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      {step.step === 1 && (
-                        <div className="mt-4">
-                          <Button asChild className="bg-green-600 hover:bg-green-700">
-                            <a href="https://supabase.com" target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Open Supabase
-                            </a>
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+              <>
+                {setupSteps.map((step, index) => (
+                  <motion.div
+                    key={step.step}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                  >
+                    <Card className="frosted-glass">
+                      <CardHeader>
+                        <CardTitle className="text-white flex items-center">
+                          <div className="p-2 bg-blue-600 rounded-lg mr-3 text-white font-bold text-sm">{step.step}</div>
+                          {step.title}
+                        </CardTitle>
+                        <CardDescription className="text-slate-300">{step.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          {step.details?.map((detail, detailIndex) => (
+                            <li key={detailIndex} className="flex items-start space-x-2 text-slate-300">
+                              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0" />
+                              <span className="text-sm">{detail}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        {step.step === 1 && (
+                          <div className="mt-4">
+                            <Button asChild className="bg-green-600 hover:bg-green-700">
+                              <a href="https://supabase.com" target="_blank" rel="noopener noreferrer">
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Open Supabase
+                              </a>
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </>
             </TabsContent>
 
             <TabsContent value="env" className="space-y-6">
