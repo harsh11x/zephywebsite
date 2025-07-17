@@ -140,7 +140,7 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
             </TabsList>
 
             <TabsContent value="guide" className="space-y-6">
-              <>
+              <div>
                 {setupSteps.map((step, index) => (
                   <motion.div
                     key={step.step}
@@ -179,11 +179,11 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
                     </Card>
                   </motion.div>
                 ))}
-              </>
+              </div>
             </TabsContent>
 
             <TabsContent value="env" className="space-y-6">
-              <>
+              <div>
                 <Card className="frosted-glass">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center">
@@ -228,11 +228,11 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
                     </div>
                   </CardContent>
                 </Card>
-              </>
+              </div>
             </TabsContent>
 
             <TabsContent value="database" className="space-y-6">
-              <>
+              <div>
                 <Card className="frosted-glass">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center">
@@ -270,7 +270,7 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
                     </Alert>
                   </CardContent>
                 </Card>
-              </>
+              </div>
             </TabsContent>
           </Tabs>
 
