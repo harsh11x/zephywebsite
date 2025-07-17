@@ -54,7 +54,7 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
           </div>
 
           {/* Configuration Status */}
-          <Card className="bg-black/20 border-slate-700 backdrop-blur-sm mb-8">
+          <Card className="frosted-glass mb-8">
             <CardHeader>
               <CardTitle className="text-white flex items-center">
                 <Shield className="h-5 w-5 mr-2" />
@@ -147,7 +147,7 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
-                  <Card className="bg-black/20 border-slate-700 backdrop-blur-sm">
+                  <Card className="frosted-glass">
                     <CardHeader>
                       <CardTitle className="text-white flex items-center">
                         <div className="p-2 bg-blue-600 rounded-lg mr-3 text-white font-bold text-sm">{step.step}</div>
@@ -181,7 +181,7 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
             </TabsContent>
 
             <TabsContent value="env" className="space-y-6">
-              <Card className="bg-black/20 border-slate-700 backdrop-blur-sm">
+              <Card className="frosted-glass">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center">
                     <Key className="h-5 w-5 mr-2" />
@@ -228,7 +228,7 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
             </TabsContent>
 
             <TabsContent value="database" className="space-y-6">
-              <Card className="bg-black/20 border-slate-700 backdrop-blur-sm">
+              <Card className="frosted-glass">
                 <CardHeader>
                   <CardTitle className="text-white flex items-center">
                     <Database className="h-5 w-5 mr-2" />
@@ -270,7 +270,7 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
 
           {/* Quick Actions */}
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="bg-black/20 border-slate-700 backdrop-blur-sm">
+            <Card className="frosted-glass">
               <CardHeader>
                 <CardTitle className="text-white">Need Help?</CardTitle>
                 <CardDescription className="text-slate-300">Get support and documentation</CardDescription>
@@ -291,7 +291,7 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
               </CardContent>
             </Card>
 
-            <Card className="bg-black/20 border-slate-700 backdrop-blur-sm">
+            <Card className="frosted-glass">
               <CardHeader>
                 <CardTitle className="text-white">Ready to Go?</CardTitle>
                 <CardDescription className="text-slate-300">Test your configuration</CardDescription>
