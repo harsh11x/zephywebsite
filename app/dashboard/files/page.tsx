@@ -7,6 +7,7 @@ import FileCrypto from "@/components/file-crypto"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Shield } from "lucide-react"
+import GlassPanel from "@/components/GlassPanel"
 
 export default function FilesPage() {
   const { user, loading } = useAuth()
@@ -59,8 +60,10 @@ export default function FilesPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="animate-fade-in-up">
-        <FileCrypto />
+        <div className="frosted-glass">
+          <div className="animate-fade-in-up">
+            <FileCrypto />
+          </div>
         </div>
       </main>
     </div>

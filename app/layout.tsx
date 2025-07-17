@@ -8,7 +8,8 @@ import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import Link from "next/link"
 import { CurrencyProvider } from "@/contexts/currency-context"
-
+import PageTransition from "@/components/PageTransition"
+import ClientRoot from "@/components/ClientRoot"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -29,18 +30,20 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
       </head>
-      <body className={`${inter.className} flex min-h-screen flex-col`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <CurrencyProvider>
-            <AuthProvider>
-              <div className="flex-1 flex flex-col">
-                {children}
-              </div>
-            </AuthProvider>
-          </CurrencyProvider>
-        </ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
+      <body className={`${inter.className} flex min-h-screen flex-col relative overflow-x-hidden`}>
+        <ClientRoot>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+            <CurrencyProvider>
+              <AuthProvider>
+                <PageTransition>
+                  {children}
+                </PageTransition>
+              </AuthProvider>
+            </CurrencyProvider>
+          </ThemeProvider>
+          <Analytics />
+          <SpeedInsights />
+        </ClientRoot>
       </body>
     </html>
   )

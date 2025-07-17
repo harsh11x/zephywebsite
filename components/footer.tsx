@@ -34,7 +34,7 @@ export default function Footer() {
   ]
 
   return (
-    <footer className="border-t border-white/10 bg-black">
+    <footer className="border-t-[0.5px] border-white/10 bg-black">
       <div className="container py-12 md:py-20 px-4 sm:px-6 lg:px-8">
         {/* Currency Selector */}
         <div className="flex justify-end mb-8">
@@ -165,7 +165,7 @@ export default function Footer() {
           </Accordion>
         </div>
 
-        <div className="mt-12 border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+        <div className="mt-12 border-t-[0.5px] border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
           <p className="text-xs text-white/40 font-light text-center sm:text-left">
             © {new Date().getFullYear()} Zephyrn Securities Inc. All rights reserved.
           </p>

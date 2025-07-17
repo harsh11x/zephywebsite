@@ -8,6 +8,7 @@ import { Lock, FileText, MessageCircle, Phone } from "lucide-react"
 import { MotionDiv, MotionH1, MotionP } from "@/components/motion"
 import Link from "next/link"
 import Header from "@/components/header"
+import GlassPanel from "@/components/GlassPanel"
 
 export default function Dashboard() {
   const { user, loading } = useAuth()
@@ -86,54 +87,45 @@ export default function Dashboard() {
 
       <main className="container py-20">
         <MotionDiv initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-          <div className="mb-16 text-center">
+          <div className="mb-8 sm:mb-12 md:mb-16 text-center">
             <MotionH1 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              {...{ className: "text-6xl font-light tracking-tight mb-4" }}
             >
-              Welcome back, {getUserDisplayName()}
+              <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light tracking-tight mb-2 sm:mb-4">
+                Welcome back, {getUserDisplayName()}
+              </div>
             </MotionH1>
             <MotionP 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              {...{ className: "text-xl text-white/60 font-light" }}
             >
-              Choose your encryption tool below
+              <div className="text-base sm:text-lg md:text-xl text-white/60 font-light px-4 sm:px-0">
+                Choose your encryption tool below
+              </div>
             </MotionP>
           </div>
 
           {/* Encryption Tools */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8 max-w-4xl sm:max-w-5xl mx-auto px-4 sm:px-0">
             {encryptionTools.map((tool, index) => (
-              <MotionDiv
-                key={tool.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                >
-                <Link href={tool.href}>
-                  <Card className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all cursor-pointer group h-full">
-                      <CardHeader>
-                      <div className={`p-3 rounded-lg bg-gradient-to-b ${tool.color} backdrop-blur-sm w-fit group-hover:scale-110 transition-transform`}>
-                        <tool.icon className="h-6 w-6 text-white" />
-                        </div>
-                      <CardTitle className="text-2xl font-light text-white mt-4">{tool.title}</CardTitle>
-                      <CardDescription className="text-white/60 text-base font-light">
-                        {tool.description}
-                      </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                      <div className="text-sm text-white/40 font-light">
-                        Click to access {tool.title.toLowerCase()} tools
+              <div key={tool.title} className="bg-white/10 backdrop-blur-lg border-2 border-white/20 shadow-lg rounded-xl p-6 group cursor-pointer h-full transition-transform duration-300 hover:bg-white/20 hover:shadow-xl">
+                <Link href={tool.href} className="block h-full">
+                  <div className="flex flex-col h-full justify-between">
+                    <div>
+                      <div className={`p-2 sm:p-3 rounded-lg bg-gradient-to-b ${tool.color} backdrop-blur-sm w-fit group-hover:scale-110 transition-transform`}>
+                        <tool.icon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                       </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-              </MotionDiv>
-              ))}
+                      <div className="text-lg sm:text-xl md:text-2xl font-light text-white mt-3 sm:mt-4">{tool.title}</div>
+                      <div className="text-sm sm:text-base text-white/60 font-light mt-2">{tool.description}</div>
+                    </div>
+                    <div className="text-xs sm:text-sm text-white/40 font-light mt-4 sm:mt-6 md:mt-8">Click to access {tool.title.toLowerCase()} tools</div>
+                  </div>
+                </Link>
+              </div>
+            ))}
           </div>
         </MotionDiv>
       </main>

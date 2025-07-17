@@ -11,12 +11,6 @@ import Link from "next/link"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 
-// Motion-wrapped components
-const MotionDiv = motion.div
-const MotionH1 = motion.h1
-const MotionP = motion.p
-const MotionSpan = motion.span
-
 export default function HomePage() {
   const { user } = useAuth()
   const { scrollYProgress } = useScroll()
@@ -101,9 +95,9 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
+    <div className="min-h-screen text-white relative z-10 overflow-hidden">
       {/* Subtle grid pattern */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px]" />
+      {/* Remove the grid background div from the homepage */}
 
       {/* Minimal geometric accents */}
       <div className="absolute top-20 right-20 w-px h-40 bg-gradient-to-b from-white/20 to-transparent" />
@@ -114,25 +108,15 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative py-32 sm:py-40">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
-          <MotionDiv
+          {/* Remove the static heading and subtitle here */}
+          <motion.div
             style={{ y, opacity }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
             className="text-center max-w-4xl mx-auto"
           >
-            <MotionDiv
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="mb-8"
-            >
-              <Badge className="bg-white/5 text-white/80 border border-white/10 px-6 py-2 text-sm font-medium backdrop-blur-sm">
-                Trusted by 15,000+ Global Enterprises
-              </Badge>
-            </MotionDiv>
-
-            <MotionH1
+            <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
@@ -141,9 +125,11 @@ export default function HomePage() {
               <span className="block text-white">Enterprise</span>
               <span className="block text-white/60">Cybersecurity</span>
               <span className="block text-white/30">Redefined</span>
-            </MotionH1>
-
-            <MotionP
+            </motion.h1>
+            <Badge className="bg-white/5 text-white/80 border border-white/10 px-6 py-2 text-sm font-medium backdrop-blur-sm mb-8">
+              Trusted by 15,000+ Global Enterprises
+            </Badge>
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
@@ -153,9 +139,8 @@ export default function HomePage() {
               intelligence.
               <br />
               <span className="text-white/80">Protecting Fortune 500 companies worldwide.</span>
-            </MotionP>
-
-            <MotionDiv
+            </motion.p>
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.8 }}
@@ -191,15 +176,15 @@ export default function HomePage() {
                   Watch Demo
                 </Button>
               </Link>
-            </MotionDiv>
-          </MotionDiv>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       {/* Real-time Stats */}
       <section className="py-20 border-y border-white/10">
         <div className="container">
-          <MotionDiv
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -208,53 +193,53 @@ export default function HomePage() {
           >
             <div className="p-4">
               <h3 className="text-5xl font-light text-white">
-                <MotionSpan animate={{ opacity: [0, 1, 0] }} transition={{ duration: 3, repeat: Infinity }}>
+                <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 3, repeat: Infinity }}>
                   {stats.clients.toLocaleString()}
-                </MotionSpan>
+                </motion.span>
               </h3>
               <p className="text-white/60 mt-2">Global Clients</p>
             </div>
             <div className="p-4">
               <h3 className="text-5xl font-light text-white">
-                <MotionSpan
+                <motion.span
                   animate={{ opacity: [0, 1, 0] }}
                   transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
                 >
                   {Math.floor(stats.threats / 1000000)}M+
-                </MotionSpan>
+                </motion.span>
               </h3>
               <p className="text-white/60 mt-2">Threats Neutralized</p>
             </div>
             <div className="p-4">
               <h3 className="text-5xl font-light text-white">
-                <MotionSpan
+                <motion.span
                   animate={{ opacity: [0, 1, 0] }}
                   transition={{ duration: 3, repeat: Infinity, delay: 1 }}
                 >
                   {stats.responseTime.toFixed(2)}s
-                </MotionSpan>
+                </motion.span>
               </h3>
               <p className="text-white/60 mt-2">Avg. Response Time</p>
             </div>
             <div className="p-4">
               <h3 className="text-5xl font-light text-white">
-                <MotionSpan
+                <motion.span
                   animate={{ opacity: [0, 1, 0] }}
                   transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
                 >
                   {stats.uptime.toFixed(2)}%
-                </MotionSpan>
+                </motion.span>
               </h3>
               <p className="text-white/60 mt-2">Platform Uptime</p>
             </div>
-          </MotionDiv>
+          </motion.div>
         </div>
       </section>
 
       {/* Core Features */}
       <section className="py-20">
         <div className="container">
-          <MotionDiv
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -263,18 +248,18 @@ export default function HomePage() {
           >
             <h2 className="text-5xl font-light tracking-tight text-white">The Future of Digital Defense</h2>
             <p className="text-xl text-white/60 mt-4">Unparalleled security for the modern enterprise.</p>
-          </MotionDiv>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <MotionDiv
+              <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <Card className="bg-white/5 border border-white/10 text-center h-full">
+                <Card className="frosted-glass text-center h-full">
                   <CardHeader>
                     <div className="flex justify-center mb-4">
                       <feature.icon className="w-10 h-10 text-white" />
@@ -285,7 +270,7 @@ export default function HomePage() {
                     <p className="text-white/60">{feature.description}</p>
                   </CardContent>
                 </Card>
-              </MotionDiv>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -294,7 +279,7 @@ export default function HomePage() {
       {/* Testimonials */}
       <section className="py-20 border-y border-white/10">
         <div className="container">
-          <MotionDiv
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -302,23 +287,23 @@ export default function HomePage() {
             className="text-center mb-12"
           >
             <h2 className="text-5xl font-light tracking-tight text-white">Trusted by Industry Leaders</h2>
-          </MotionDiv>
+          </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <MotionDiv
+              <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <Card className="bg-white/5 border-white/10 h-full">
+                <Card className="frosted-glass h-full">
                   <CardContent className="pt-6">
                     <p className="text-white/80 mb-4">"{testimonial.content}"</p>
                     <p className="text-white font-semibold">{testimonial.name}</p>
                   </CardContent>
                 </Card>
-              </MotionDiv>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -327,7 +312,7 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="py-32 border-t border-white/10">
         <div className="container text-center">
-          <MotionDiv
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -341,7 +326,7 @@ export default function HomePage() {
             <p className="text-xl text-white/60 mb-12 max-w-3xl mx-auto font-light">
               Join the elite tier of organizations that trust Zephyrn Securities for their most critical assets.
             </p>
-          </MotionDiv>
+          </motion.div>
           {!user && (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <Link href="/pricing">

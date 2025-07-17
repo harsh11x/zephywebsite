@@ -45,6 +45,61 @@ body {
   }
 }
 
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-move {
+  background-size: 200% 200%;
+  animation: gradientMove 16s ease-in-out infinite;
+}
+
+/* Glassmorphic + neon for panels/cards */
+.glass-neon {
+  background: linear-gradient(120deg,rgba(0,255,255,0.08) 0%,rgba(58,123,213,0.10) 50%,rgba(106,130,251,0.10) 100%);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border-radius: 1.5rem;
+  border: 1.5px solid rgba(0,255,255,0.18);
+  box-shadow: 0 2px 24px 0 rgba(0,255,255,0.08), 0 0 0 1.5px #00fff7;
+}
+
+/* Neon button effect */
+.neon-btn {
+  background: linear-gradient(120deg,rgba(0,255,255,0.18) 0%,rgba(58,123,213,0.18) 100%);
+  border: 1.5px solid #00fff7;
+  box-shadow: 0 0 12px 0 #00fff744, 0 2px 12px #00fff733;
+  color: #fff;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.neon-btn:hover, .neon-btn:focus {
+  box-shadow: 0 0 24px 2px #00fff7cc, 0 2px 24px #00fff799;
+  border-color: #3a7bd5;
+}
+
+/* Neon focus ring for inputs */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #00fff7cc;
+  border-color: #00fff7;
+}
+
+.frosted-glass {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(8px);
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.10);
+  padding: 1.5rem 1rem;
+}
+
 @layer components {
   .container {
     @apply mx-auto px-4 sm:px-6 lg:px-8;

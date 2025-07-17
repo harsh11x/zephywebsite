@@ -29,6 +29,7 @@ import Header from "@/components/header"
 import VoiceCall from "@/components/voice-call"
 import { io, Socket } from "socket.io-client"
 import { toast } from "sonner"
+import GlassPanel from "@/components/GlassPanel"
 
 export default function VoiceCallPage() {
   const { user, loading } = useAuth()
@@ -186,22 +187,24 @@ export default function VoiceCallPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {/* Voice Call Interface */}
             <div className="lg:col-span-2">
-              <VoiceCall 
-                userEmail={(user as any).email}
-                socket={socket}
-                onCallEnd={() => {
-                  // Update stats when call ends
-                  if (socket) {
-                    socket.emit('voice_get_stats')
-                  }
-                }}
-              />
+              <div className="frosted-glass h-full">
+                <VoiceCall 
+                  userEmail={(user as any).email}
+                  socket={socket}
+                  onCallEnd={() => {
+                    // Update stats when call ends
+                    if (socket) {
+                      socket.emit('voice_get_stats')
+                    }
+                  }}
+                />
+              </div>
             </div>
 
             {/* Call Statistics & Info */}
             <div className="space-y-6">
               {/* Connection Status */}
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+              <Card className="glass-neon">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -232,7 +235,7 @@ export default function VoiceCallPage() {
               </Card>
 
               {/* Call Statistics */}
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+              <Card className="glass-neon">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Clock className="h-5 w-5" />
@@ -264,7 +267,7 @@ export default function VoiceCallPage() {
               </Card>
 
               {/* Security Features */}
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+              <Card className="glass-neon">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Shield className="h-5 w-5" />
@@ -300,7 +303,7 @@ export default function VoiceCallPage() {
               </Card>
 
               {/* Call Quality Info */}
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+              <Card className="glass-neon">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Volume2 className="h-5 w-5" />

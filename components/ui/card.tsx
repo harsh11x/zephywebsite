@@ -76,4 +76,9 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
+// Frosted glass class: matches badge style for subtle, premium glass effect
+// .frosted-glass {
+//   @apply bg-white/5 border border-white/10 backdrop-blur-sm rounded-xl shadow px-6 py-4;
+// }
+
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
