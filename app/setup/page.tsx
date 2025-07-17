@@ -183,90 +183,94 @@ STRIPE_SECRET_KEY=sk_test_your-stripe-secret`
             </TabsContent>
 
             <TabsContent value="env" className="space-y-6">
-              <Card className="frosted-glass">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Key className="h-5 w-5 mr-2" />
-                    Environment Variables Setup
-                  </CardTitle>
-                  <CardDescription className="text-slate-300">
-                    Create a .env.local file in your project root with these variables
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="relative">
-                    <pre className="bg-slate-900/50 p-4 rounded-lg text-slate-300 text-sm overflow-x-auto">
-                      {envFileContent}
-                    </pre>
-                    <Button
-                      onClick={() => copyToClipboard(envFileContent, "env-file")}
-                      className="absolute top-2 right-2 h-8 w-8 p-0"
-                      variant="ghost"
-                    >
-                      {copiedText === "env-file" ? (
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+              <>
+                <Card className="frosted-glass">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center">
+                      <Key className="h-5 w-5 mr-2" />
+                      Environment Variables Setup
+                    </CardTitle>
+                    <CardDescription className="text-slate-300">
+                      Create a .env.local file in your project root with these variables
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="relative">
+                      <pre className="bg-slate-900/50 p-4 rounded-lg text-slate-300 text-sm overflow-x-auto">
+                        {envFileContent}
+                      </pre>
+                      <Button
+                        onClick={() => copyToClipboard(envFileContent, "env-file")}
+                        className="absolute top-2 right-2 h-8 w-8 p-0"
+                        variant="ghost"
+                      >
+                        {copiedText === "env-file" ? (
+                          <CheckCircle className="h-4 w-4 text-green-400" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
 
-                  <div className="space-y-3">
-                    {SUPABASE_SETUP_GUIDE.steps[2].envVars?.map((envVar, index) => (
-                      <div key={index} className="p-3 bg-slate-800/50 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <code className="text-blue-300 font-mono text-sm">{envVar.name}</code>
-                          <Badge variant={envVar.required ? "destructive" : "secondary"}>
-                            {envVar.required ? "Required" : "Optional"}
-                          </Badge>
+                    <div className="space-y-3">
+                      {SUPABASE_SETUP_GUIDE.steps[2].envVars?.map((envVar, index) => (
+                        <div key={index} className="p-3 bg-slate-800/50 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <code className="text-blue-300 font-mono text-sm">{envVar.name}</code>
+                            <Badge variant={envVar.required ? "destructive" : "secondary"}>
+                              {envVar.required ? "Required" : "Optional"}
+                            </Badge>
+                          </div>
+                          <p className="text-slate-400 text-sm mb-2">Example: {envVar.example}</p>
+                          {envVar.note && <p className="text-slate-500 text-xs">{envVar.note}</p>}
                         </div>
-                        <p className="text-slate-400 text-sm mb-2">Example: {envVar.example}</p>
-                        {envVar.note && <p className="text-slate-500 text-xs">{envVar.note}</p>}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
             </TabsContent>
 
             <TabsContent value="database" className="space-y-6">
-              <Card className="frosted-glass">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center">
-                    <Database className="h-5 w-5 mr-2" />
-                    Database Schema Setup
-                  </CardTitle>
-                  <CardDescription className="text-slate-300">
-                    Run this SQL in your Supabase SQL Editor to set up the required tables
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="relative">
-                    <pre className="bg-slate-900/50 p-4 rounded-lg text-slate-300 text-sm overflow-x-auto max-h-96">
-                      {SUPABASE_SETUP_GUIDE.steps[4].sql}
-                    </pre>
-                    <Button
-                      onClick={() => copyToClipboard(SUPABASE_SETUP_GUIDE.steps[4].sql || "", "sql")}
-                      className="absolute top-2 right-2 h-8 w-8 p-0"
-                      variant="ghost"
-                    >
-                      {copiedText === "sql" ? (
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+              <>
+                <Card className="frosted-glass">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center">
+                      <Database className="h-5 w-5 mr-2" />
+                      Database Schema Setup
+                    </CardTitle>
+                    <CardDescription className="text-slate-300">
+                      Run this SQL in your Supabase SQL Editor to set up the required tables
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="relative">
+                      <pre className="bg-slate-900/50 p-4 rounded-lg text-slate-300 text-sm overflow-x-auto max-h-96">
+                        {SUPABASE_SETUP_GUIDE.steps[4].sql}
+                      </pre>
+                      <Button
+                        onClick={() => copyToClipboard(SUPABASE_SETUP_GUIDE.steps[4].sql || "", "sql")}
+                        className="absolute top-2 right-2 h-8 w-8 p-0"
+                        variant="ghost"
+                      >
+                        {copiedText === "sql" ? (
+                          <CheckCircle className="h-4 w-4 text-green-400" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
 
-                  <Alert className="mt-4 bg-blue-900/20 border-blue-700">
-                    <Database className="h-4 w-4" />
-                    <AlertDescription className="text-blue-200">
-                      <strong>How to run:</strong> Go to your Supabase project → SQL Editor → New query → Paste the SQL
-                      above → Run
-                    </AlertDescription>
-                  </Alert>
-                </CardContent>
-              </Card>
+                    <Alert className="mt-4 bg-blue-900/20 border-blue-700">
+                      <Database className="h-4 w-4" />
+                      <AlertDescription className="text-blue-200">
+                        <strong>How to run:</strong> Go to your Supabase project → SQL Editor → New query → Paste the SQL
+                        above → Run
+                      </AlertDescription>
+                    </Alert>
+                  </CardContent>
+                </Card>
+              </>
             </TabsContent>
           </Tabs>
 
