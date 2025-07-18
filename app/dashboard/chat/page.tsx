@@ -83,7 +83,8 @@ interface ChatSession {
 
 // Helper to get sorted connection id
 function getSortedConnectionId(email1: string, email2: string) {
-  return [email1, email2].sort().join('_');
+  // Normalize emails to lowercase and trim whitespace for consistent session keys
+  return [email1.trim().toLowerCase(), email2.trim().toLowerCase()].sort().join('_');
 }
 
 // Helper to merge all messages for a given email across all sessions
@@ -104,6 +105,8 @@ export default function ChatPage() {
   const [connections, setConnections] = useState<ChatConnection[]>([])
   const [selectedConnection, setSelectedConnection] = useState<ChatConnection | null>(null)
   // Replace single messages state with chat sessions
+  // chatSessions stores all chat histories per session (per user pair) in a Map.
+  // Always use the functional form of setChatSessions to merge updates, never replace the map except on mount restore.
   const [chatSessions, setChatSessions] = useState<Map<string, ChatSession>>(new Map())
   const [newMessage, setNewMessage] = useState("")
   const [connectingEmail, setConnectingEmail] = useState("")
