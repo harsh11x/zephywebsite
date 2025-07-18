@@ -41,8 +41,8 @@ export default function RootLayout({
               </AuthProvider>
             </CurrencyProvider>
           </ThemeProvider>
-          <Analytics />
-          <SpeedInsights />
+          {/* <Analytics /> */}
+          {/* <SpeedInsights /> */}
         </ClientRoot>
       </body>
     </html>
