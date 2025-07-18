@@ -113,26 +113,26 @@ export default function EncryptionHistory() {
           <div className="space-y-3">
             {history.map((log, index) => (
               <div key={log.id} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
                   style={{ display: 'flex', alignItems: 'center', width: '100%' }}
-                >
+              >
                   <div className={`p-2 rounded-lg ${log.operation === "encrypt" ? "bg-green-900/30 text-green-400" : "bg-blue-900/30 text-blue-400"}`}>
                     {log.operation === "encrypt" ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
                   </div>
                   <div>
                     <div className="text-white font-medium">{log.file_name}</div>
                     <div className="text-slate-400 text-sm">{formatFileSize(log.file_size)} • {formatDate(log.created_at)}</div>
-                  </div>
-                  <Badge
-                    variant={log.operation === "encrypt" ? "default" : "secondary"}
-                    className={log.operation === "encrypt" ? "bg-green-900 text-green-300" : "bg-blue-900 text-blue-300"}
-                  >
-                    {log.operation === "encrypt" ? "Encrypted" : "Decrypted"}
-                  </Badge>
-                </motion.div>
+                </div>
+                <Badge
+                  variant={log.operation === "encrypt" ? "default" : "secondary"}
+                  className={log.operation === "encrypt" ? "bg-green-900 text-green-300" : "bg-blue-900 text-blue-300"}
+                >
+                  {log.operation === "encrypt" ? "Encrypted" : "Decrypted"}
+                </Badge>
+              </motion.div>
               </div>
             ))}
           </div>

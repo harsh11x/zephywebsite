@@ -94,7 +94,7 @@ export default function Dashboard() {
               transition={{ delay: 0.3, duration: 0.8 }}
             >
               <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light tracking-tight mb-2 sm:mb-4">
-                Welcome back, {getUserDisplayName()}
+              Welcome back, {getUserDisplayName()}
               </div>
             </MotionH1>
             <MotionP 
@@ -103,7 +103,7 @@ export default function Dashboard() {
               transition={{ delay: 0.5, duration: 0.8 }}
             >
               <div className="text-base sm:text-lg md:text-xl text-white/60 font-light px-4 sm:px-0">
-                Choose your encryption tool below
+              Choose your encryption tool below
               </div>
             </MotionP>
           </div>
@@ -123,9 +123,9 @@ export default function Dashboard() {
                     </div>
                     <div className="text-xs sm:text-sm text-white/40 font-light mt-4 sm:mt-6 md:mt-8">Click to access {tool.title.toLowerCase()} tools</div>
                   </div>
-                </Link>
+                  </Link>
               </div>
-            ))}
+              ))}
           </div>
         </MotionDiv>
       </main>

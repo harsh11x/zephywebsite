@@ -32,15 +32,15 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} flex min-h-screen flex-col relative overflow-x-hidden`}>
         <ClientRoot>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-            <CurrencyProvider>
-              <AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <CurrencyProvider>
+            <AuthProvider>
                 <PageTransition>
-                  {children}
+                {children}
                 </PageTransition>
-              </AuthProvider>
-            </CurrencyProvider>
-          </ThemeProvider>
+            </AuthProvider>
+          </CurrencyProvider>
+        </ThemeProvider>
           {/* <Analytics /> */}
           {/* <SpeedInsights /> */}
         </ClientRoot>

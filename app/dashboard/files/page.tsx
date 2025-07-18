@@ -61,8 +61,8 @@ export default function FilesPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="frosted-glass">
-          <div className="animate-fade-in-up">
-            <FileCrypto />
+        <div className="animate-fade-in-up">
+        <FileCrypto />
           </div>
         </div>
       </main>

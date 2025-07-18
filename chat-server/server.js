@@ -218,23 +218,23 @@ io.on('connection', (socket) => {
       // If this was the last socket for this user, clean up connections
       if (userSockets.get(socket.userEmail).size === 0) {
         userSockets.delete(socket.userEmail);
-        
-        // Remove from user connections
-        if (userConnections.has(socket.userEmail)) {
-          const connections = userConnections.get(socket.userEmail);
-          connections.forEach(connectedEmail => {
-            const otherUserConnections = userConnections.get(connectedEmail);
-            if (otherUserConnections) {
-              otherUserConnections.delete(socket.userEmail);
-              // Notify the other user about disconnection
-              io.to(connectedEmail).emit('user_disconnected', { email: socket.userEmail });
-            }
-          });
-          userConnections.delete(socket.userEmail);
+    
+    // Remove from user connections
+    if (userConnections.has(socket.userEmail)) {
+      const connections = userConnections.get(socket.userEmail);
+      connections.forEach(connectedEmail => {
+        const otherUserConnections = userConnections.get(connectedEmail);
+        if (otherUserConnections) {
+          otherUserConnections.delete(socket.userEmail);
+          // Notify the other user about disconnection
+          io.to(connectedEmail).emit('user_disconnected', { email: socket.userEmail });
         }
-        
-        // Notify other users about this user's disconnection
-        socket.broadcast.emit('user_disconnected', { email: socket.userEmail });
+      });
+      userConnections.delete(socket.userEmail);
+    }
+    
+    // Notify other users about this user's disconnection
+    socket.broadcast.emit('user_disconnected', { email: socket.userEmail });
       }
     }
     // Always broadcast available users after any disconnect

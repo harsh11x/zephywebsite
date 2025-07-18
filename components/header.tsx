@@ -31,32 +31,32 @@ export default function Header() {
 
   return (
     <div className="fixed top-0 left-0 w-full z-50 bg-transparent">
-      <motion.header
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+    <motion.header
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
         style={{ width: '100%' }}
-      >
+    >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl flex h-16 items-center justify-between">
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-4 group">
+        <div className="flex items-center">
+          <Link href="/" className="flex items-center space-x-4 group">
               <div className="p-2 bg-white/10 backdrop-blur-sm">
                 <div>
-                  <motion.div
-                    whileHover={{ rotate: 180 }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
+            <motion.div
+              whileHover={{ rotate: 180 }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
                     style={{ display: 'inline-block' }}
-                  >
-                    <Shield className="h-6 w-6 text-white" />
-                  </motion.div>
+            >
+              <Shield className="h-6 w-6 text-white" />
+            </motion.div>
                 </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-light text-white tracking-wide">ZEPHYRN</span>
-                <span className="text-xs text-white/40 font-light tracking-[0.2em]">SECURITIES</span>
-              </div>
-            </Link>
-          </div>
+            <div className="flex flex-col">
+              <span className="text-xl font-light text-white tracking-wide">ZEPHYRN</span>
+              <span className="text-xs text-white/40 font-light tracking-[0.2em]">SECURITIES</span>
+            </div>
+          </Link>
+        </div>
 
           <nav className="hidden md:flex items-center space-x-8 text-sm font-light bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg rounded-xl px-4 py-1 mt-0">
             {navigation.map((item) => (
@@ -71,40 +71,40 @@ export default function Header() {
             ))}
           </nav>
 
-          <div className="flex items-center">
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                className="mr-2 px-0 text-base hover:bg-white/10 focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
-              >
-                <Menu className="h-6 w-6 text-white" />
-                <span className="sr-only">Toggle Menu</span>
-              </Button>
-            </SheetTrigger>
+        <div className="flex items-center">
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              className="mr-2 px-0 text-base hover:bg-white/10 focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+            >
+              <Menu className="h-6 w-6 text-white" />
+              <span className="sr-only">Toggle Menu</span>
+            </Button>
+          </SheetTrigger>
             <SheetContent side="left" className="pr-0 bg-white/10 backdrop-blur-lg border border-white/20 shadow-xl">
-              <Link href="/" className="flex items-center space-x-3" onClick={() => setIsOpen(false)}>
-                <div className="p-2 bg-white/10">
-                  <Shield className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-light text-white tracking-wide">ZEPHYRN</span>
-                  <span className="text-xs text-white/40 tracking-[0.2em]">SECURITIES</span>
-                </div>
-              </Link>
+            <Link href="/" className="flex items-center space-x-3" onClick={() => setIsOpen(false)}>
+              <div className="p-2 bg-white/10">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-light text-white tracking-wide">ZEPHYRN</span>
+                <span className="text-xs text-white/40 tracking-[0.2em]">SECURITIES</span>
+              </div>
+            </Link>
               <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6 flex flex-col gap-8">
-                <div className="flex flex-col space-y-6">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
+              <div className="flex flex-col space-y-6">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setIsOpen(false)}
                       className="text-white/60 transition-all duration-200 hover:text-white hover:bg-white/10 rounded-lg px-3 py-2 text-lg font-light"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
                 {/* User actions for mobile */}
                 {user ? (
                   <div className="flex flex-col space-y-4 border-t border-white/10 pt-6">
@@ -124,73 +124,73 @@ export default function Header() {
                     <Link href="/pricing" onClick={() => setIsOpen(false)} className="bg-white text-black hover:bg-white/90 font-medium px-6 py-2 rounded-none text-base">Start Trial</Link>
                   </div>
                 )}
-              </div>
-            </SheetContent>
-          </Sheet>
+            </div>
+          </SheetContent>
+        </Sheet>
 
-            <div className="hidden md:flex items-center space-x-4">
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+          <div className="hidden md:flex items-center space-x-4">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                     <div>
                       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ display: 'inline-block' }}>
-                        <Button variant="ghost" size="sm" className="hover:bg-white/10 text-white font-light">
-                          <User className="h-4 w-4 mr-2" />
-                          <span className="hidden sm:inline">{user.email?.split("@")[0]}</span>
-                        </Button>
-                      </motion.div>
+                    <Button variant="ghost" size="sm" className="hover:bg-white/10 text-white font-light">
+                      <User className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">{user.email?.split("@")[0]}</span>
+                    </Button>
+                  </motion.div>
                     </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-black border-white/10">
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="cursor-pointer text-white">
-                        <User className="h-4 w-4 mr-2" />
-                        Command Center
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin" className="cursor-pointer text-white">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Admin Console
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-white/10" />
-                    <DropdownMenuItem onClick={logout} className="cursor-pointer text-white/60 focus:text-white">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Secure Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <div className="flex items-center space-x-4">
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-black border-white/10">
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard" className="cursor-pointer text-white">
+                      <User className="h-4 w-4 mr-2" />
+                      Command Center
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="cursor-pointer text-white">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Admin Console
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem onClick={logout} className="cursor-pointer text-white/60 focus:text-white">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Secure Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center space-x-4">
                   <div>
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ display: 'inline-block' }}>
-                      <Link href="/auth">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-white/60 hover:text-white hover:bg-white/10 font-light"
-                        >
-                          Sign In
-                        </Button>
-                      </Link>
-                    </motion.div>
+                  <Link href="/auth">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-white/60 hover:text-white hover:bg-white/10 font-light"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                </motion.div>
                   </div>
                   <div>
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ display: 'inline-block' }}>
-                      <Link href="/pricing">
-                        <Button size="sm" className="bg-white text-black hover:bg-white/90 font-medium px-6 rounded-none">
-                          Start Trial
-                        </Button>
-                      </Link>
-                    </motion.div>
+                  <Link href="/pricing">
+                    <Button size="sm" className="bg-white text-black hover:bg-white/90 font-medium px-6 rounded-none">
+                      Start Trial
+                    </Button>
+                  </Link>
+                </motion.div>
                   </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
-      </motion.header>
+      </div>
+    </motion.header>
     </div>
   )
 }

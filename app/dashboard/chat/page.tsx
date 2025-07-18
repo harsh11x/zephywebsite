@@ -337,9 +337,9 @@ export default function ChatPage() {
             };
           } catch (err) {
             displayMessage = {
-              ...message,
+              ...message, 
               content: '[Encrypted message - decryption failed]',
-              decrypted: false
+              decrypted: false 
             };
           }
         }
@@ -364,8 +364,8 @@ export default function ChatPage() {
                 if (session.connectionId !== newConnection.id && session.connectionId.includes(message.sender)) {
                   foundSessionId = id;
                   break;
-                }
-              }
+          }
+        }
               if (foundSessionId) {
                 const oldSession = prevSessions.get(foundSessionId);
                 const newSessions = new Map(prevSessions);
@@ -651,7 +651,7 @@ export default function ChatPage() {
       message
     })
 
-          // Add the original plain text message to the chat for the sender
+    // Add the original plain text message to the chat for the sender
       setChatSessions(prev => {
         const sessionKey = getSortedConnectionId(selectedConnection.email, (user as any).email)
         const currentSession = prev.get(sessionKey) || {
@@ -662,9 +662,9 @@ export default function ChatPage() {
         }
       
       const updatedMessages = [...currentSession.messages, {
-          ...message,
-          content: newMessage, // Show plain text to sender
-          decrypted: true
+      ...message,
+      content: newMessage, // Show plain text to sender
+      decrypted: true
         }];
       const newSessions = new Map(prev);
       newSessions.set(sessionKey, {
@@ -761,9 +761,9 @@ export default function ChatPage() {
         }
         
         const updatedMessages = [...currentSession.messages, {
-            ...message,
-            fileName: file.name, // Show original filename to sender
-            decrypted: true
+        ...message,
+        fileName: file.name, // Show original filename to sender
+        decrypted: true
           }];
         const newSessions = new Map(prev);
         newSessions.set(sessionKey, {
@@ -873,71 +873,71 @@ export default function ChatPage() {
           {/* Sidebar: Connections */}
           <div className="frosted-glass lg:col-span-1 h-full p-0">
             <CardHeader className="pb-4">
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
                   <span className="text-lg sm:text-xl">Connections</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getConnectionStatusIcon()}
-                  <Badge variant="secondary" className={
-                    connectionStatus === 'connected' ? "bg-green-500/20 text-green-400" :
-                    connectionStatus === 'connecting' ? "bg-yellow-500/20 text-yellow-400" :
-                    connectionStatus === 'error' ? "bg-red-500/20 text-red-400" :
-                    "bg-gray-500/20 text-gray-400"
-                  }>
-                    {getConnectionStatusText()}
-                  </Badge>
-                </div>
-              </CardTitle>
-            </CardHeader>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getConnectionStatusIcon()}
+                    <Badge variant="secondary" className={
+                      connectionStatus === 'connected' ? "bg-green-500/20 text-green-400" :
+                      connectionStatus === 'connecting' ? "bg-yellow-500/20 text-yellow-400" :
+                      connectionStatus === 'error' ? "bg-red-500/20 text-red-400" :
+                      "bg-gray-500/20 text-gray-400"
+                    }>
+                      {getConnectionStatusText()}
+                    </Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
             <CardContent className="space-y-6 px-6">
               <div className="space-y-3">
-                <Input
-                  placeholder="Enter email to connect"
-                  value={connectingEmail}
-                  onChange={(e) => setConnectingEmail(e.target.value)}
+                  <Input
+                    placeholder="Enter email to connect"
+                    value={connectingEmail}
+                    onChange={(e) => setConnectingEmail(e.target.value)}
                   className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-12 text-base"
-                />
-                <Button 
-                  onClick={connectToUser}
-                  disabled={!connectingEmail || isConnecting || connectionStatus !== 'connected' || !encryptionKey}
+                  />
+                  <Button 
+                    onClick={connectToUser}
+                    disabled={!connectingEmail || isConnecting || connectionStatus !== 'connected' || !encryptionKey}
                   className="w-full h-12 text-base"
-                >
-                  {isConnecting ? "Connecting..." : <><Plus className="h-4 w-4 mr-2" />Connect</>}
-                </Button>
-              </div>
+                  >
+                    {isConnecting ? "Connecting..." : <><Plus className="h-4 w-4 mr-2" />Connect</>}
+                  </Button>
+                </div>
 
-              <Separator className="bg-white/10" />
+                <Separator className="bg-white/10" />
 
               <ScrollArea className="h-[400px]">
                 <div className="space-y-3 pr-4">
-                  {connections.length === 0 ? (
+                    {connections.length === 0 ? (
                     <div className="text-center">
                       <Users className="h-8 w-8 text-white/20 mx-auto mb-3" />
                       <p className="text-white/40 text-sm">
                         No connections yet. Add someone by email to start chatting.
                       </p>
                     </div>
-                  ) : (
+                    ) : (
                     // Deduplicate connections by id before rendering
                     Array.from(new Map(connections.map(conn => [conn.id, conn])).values()).map((connection: ChatConnection) => (
-                      <div
-                        key={connection.id}
+                        <div
+                          key={connection.id}
                         className={`p-4 rounded-xl transition-all ${
-                          selectedConnection?.id === connection.id
-                            ? 'bg-white/20 border border-white/20'
-                            : 'bg-white/5 hover:bg-white/10'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div 
+                            selectedConnection?.id === connection.id
+                              ? 'bg-white/20 border border-white/20'
+                              : 'bg-white/5 hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div 
                             className="flex items-center gap-3 cursor-pointer flex-1"
                             onClick={() => {
                               setSelectedConnection(connection)
                               markConnectionAsRead(connection.id)
                             }}
-                          >
+                            >
                             <User className="h-5 w-5" />
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-medium truncate">{connection.email}</div>
@@ -954,7 +954,7 @@ export default function ChatPage() {
                                           ? lastMessage.content.substring(0, 30) + '...'
                                           : lastMessage.content
                                       }
-                                    </div>
+                            </div>
                                   )
                                 }
                                 return null
@@ -962,11 +962,11 @@ export default function ChatPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
-                            {connection.isOnline ? (
+                              {connection.isOnline ? (
                               <div className="w-3 h-3 bg-green-400 rounded-full" />
-                            ) : (
+                              ) : (
                               <div className="w-3 h-3 bg-gray-400 rounded-full" />
-                            )}
+                              )}
                             {/* Show unread count badge */}
                             {(() => {
                               const session = chatSessions.get(connection.id)
@@ -976,181 +976,181 @@ export default function ChatPage() {
                                 </Badge>
                               ) : null
                             })()}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                // Disconnect from this specific user
-                                setConnections(prev => prev.filter(conn => conn.id !== connection.id))
-                                if (selectedConnection?.id === connection.id) {
-                                  setSelectedConnection(null)
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  // Disconnect from this specific user
+                                  setConnections(prev => prev.filter(conn => conn.id !== connection.id))
+                                  if (selectedConnection?.id === connection.id) {
+                                    setSelectedConnection(null)
                                   // Clear messages for the disconnected user
                                   setChatSessions(prev => {
                                     const newSessions = new Map(prev)
                                     newSessions.delete(connection.id)
                                     return newSessions
                                   })
-                                }
-                                socket?.emit('disconnect_from_user', { targetEmail: connection.email })
-                                toast.success(`Disconnected from ${connection.email}`)
-                              }}
+                                  }
+                                  socket?.emit('disconnect_from_user', { targetEmail: connection.email })
+                                  toast.success(`Disconnected from ${connection.email}`)
+                                }}
                               className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                            >
+                              >
                               <X className="h-4 w-4" />
-                            </Button>
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
           </div>
           {/* Main Chat Area */}
           <div className="frosted-glass lg:col-span-3 h-full p-0">
             <CardHeader className="pb-4">
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5" />
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5" />
                   <span className="text-lg sm:text-xl">
                     {selectedConnection ? `Chat with ${selectedConnection.email}` : 'Select a connection to start chatting'}
                   </span>
-                </div>
+                  </div>
                 <div className="flex items-center gap-3">
-                  {selectedConnection && (
-                    <Badge variant="secondary" className={selectedConnection.isOnline ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}>
-                      {selectedConnection.isOnline ? 'Online' : 'Offline'}
-                    </Badge>
-                  )}
-                  {selectedConnection && (
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={disconnectFromUser}
-                      className="border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                    >
-                      <WifiOff className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="border-white/20 text-white/60 hover:text-white">
-                        <Settings className="h-4 w-4" />
+                    {selectedConnection && (
+                      <Badge variant="secondary" className={selectedConnection.isOnline ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}>
+                        {selectedConnection.isOnline ? 'Online' : 'Offline'}
+                      </Badge>
+                    )}
+                    {selectedConnection && (
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={disconnectFromUser}
+                        className="border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                      >
+                        <WifiOff className="h-4 w-4" />
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-black/90 border-white/10 text-white max-w-2xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                          <Shield className="h-5 w-5" />
-                          Encryption Settings
-                        </DialogTitle>
-                        <DialogDescription className="text-white/60">
-                          Manage encryption keys and settings for secure communication
-                        </DialogDescription>
-                      </DialogHeader>
+                    )}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="border-white/20 text-white/60 hover:text-white">
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-black/90 border-white/10 text-white max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2">
+                            <Shield className="h-5 w-5" />
+                            Encryption Settings
+                          </DialogTitle>
+                          <DialogDescription className="text-white/60">
+                            Manage encryption keys and settings for secure communication
+                          </DialogDescription>
+                        </DialogHeader>
 
-                      <div className="space-y-6">
-                        {/* Key Input */}
-                        <div className="w-full flex flex-col md:flex-row items-center gap-2 bg-black/80 border-b border-white/10 p-4">
-                          <Input
-                            type="text"
-                            value={pendingKey}
-                            onChange={e => setPendingKey(e.target.value)}
-                            placeholder="Enter or generate encryption key"
-                            className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40"
-                          />
-                          <Button
-                            onClick={() => setPendingKey(generateSecureKey(32))}
-                            variant="outline"
-                            className="border-white/20 text-white/60 hover:text-white"
-                          >
-                            Generate Key
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              setEncryptionKey(pendingKey)
-                              toast.success('Encryption key applied!')
-                            }}
-                            variant="default"
-                            className="bg-blue-600 text-white hover:bg-blue-700"
-                            disabled={!pendingKey || pendingKey === encryptionKey}
-                          >
-                            Apply Key
-                          </Button>
+                        <div className="space-y-6">
+                          {/* Key Input */}
+                          <div className="w-full flex flex-col md:flex-row items-center gap-2 bg-black/80 border-b border-white/10 p-4">
+                            <Input
+                              type="text"
+                              value={pendingKey}
+                              onChange={e => setPendingKey(e.target.value)}
+                              placeholder="Enter or generate encryption key"
+                              className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                            />
+                            <Button
+                              onClick={() => setPendingKey(generateSecureKey(32))}
+                              variant="outline"
+                              className="border-white/20 text-white/60 hover:text-white"
+                            >
+                              Generate Key
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setEncryptionKey(pendingKey)
+                                toast.success('Encryption key applied!')
+                              }}
+                              variant="default"
+                              className="bg-blue-600 text-white hover:bg-blue-700"
+                              disabled={!pendingKey || pendingKey === encryptionKey}
+                            >
+                              Apply Key
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardTitle>
-            </CardHeader>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardTitle>
+              </CardHeader>
             <CardContent className="space-y-4 px-6">
-              {selectedConnection ? (
-                <>
+                {selectedConnection ? (
+                  <>
                   <ScrollArea className="h-[400px] border border-white/10 rounded-lg p-6">
                     <div className="space-y-6">
                       {getCurrentMessages().length === 0 ? (
                         <div className="text-white/40 text-sm text-center py-12">
-                          No messages yet. Start the conversation!
+                            No messages yet. Start the conversation!
                         </div>
-                      ) : (
+                        ) : (
                         getCurrentMessages().map((message) => {
-                          const isSender = message.sender === (user as any).email;
-                          const initials = message.sender
-                            ? message.sender.split("@")[0].slice(0, 2).toUpperCase()
-                            : "U";
-                          return (
-                            <div
-                              key={message.id}
-                              className={`flex ${isSender ? 'justify-end' : 'justify-start'}`}
-                            >
+                            const isSender = message.sender === (user as any).email;
+                            const initials = message.sender
+                              ? message.sender.split("@")[0].slice(0, 2).toUpperCase()
+                              : "U";
+                            return (
+                              <div
+                                key={message.id}
+                                className={`flex ${isSender ? 'justify-end' : 'justify-start'}`}
+                              >
                               <div className={`flex items-end gap-3 max-w-md lg:max-w-lg xl:max-w-xl ${isSender ? 'flex-row-reverse' : ''}`}>
-                                {/* Avatar/Initials */}
+                                  {/* Avatar/Initials */}
                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${isSender ? 'bg-blue-600' : 'bg-gray-700'}`}>{initials}</div>
-                                {/* Chat Bubble */}
+                                  {/* Chat Bubble */}
                                 <div className={`p-4 rounded-2xl shadow-md ${isSender ? 'bg-blue-500/80 text-white' : 'bg-white/10 text-white'} relative`}>
-                                  {/* Message Content */}
+                                    {/* Message Content */}
                                   <div className="text-base break-words">
-                                    {/* --- Modern File Bubble --- */}
-                                    {message.type === 'file' || message.type === 'encrypted_file' ? (
-                                      <div className="flex items-center gap-3">
+                                      {/* --- Modern File Bubble --- */}
+                                      {message.type === 'file' || message.type === 'encrypted_file' ? (
+                                        <div className="flex items-center gap-3">
                                         <FileIcon className="h-6 w-6 text-blue-400 flex-shrink-0" />
                                         <span className="truncate max-w-[200px]" title={message.fileName}>{message.fileName}</span>
-                                        {message.decrypted === false ? (
-                                          <span className="text-xs text-red-400 ml-2">{message.content || 'Decryption failed'}</span>
-                                        ) : message.fileUrl ? (
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="border-blue-400/30 text-blue-400 hover:bg-blue-500/10 ml-2"
-                                            onClick={() => downloadFile(message.fileUrl!, message.fileName!)}
-                                          >
-                                            <Download className="h-4 w-4 mr-1" />
-                                            Download
-                                          </Button>
-                                        ) : (
-                                          <span className="text-xs text-white/40 ml-2">Decrypting...</span>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <span>{message.content}</span>
-                                    )}
-                                  </div>
-                                  {/* Timestamp */}
+                                          {message.decrypted === false ? (
+                                            <span className="text-xs text-red-400 ml-2">{message.content || 'Decryption failed'}</span>
+                                          ) : message.fileUrl ? (
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="border-blue-400/30 text-blue-400 hover:bg-blue-500/10 ml-2"
+                                              onClick={() => downloadFile(message.fileUrl!, message.fileName!)}
+                                            >
+                                              <Download className="h-4 w-4 mr-1" />
+                                              Download
+                                            </Button>
+                                          ) : (
+                                            <span className="text-xs text-white/40 ml-2">Decrypting...</span>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <span>{message.content}</span>
+                                      )}
+                                    </div>
+                                    {/* Timestamp */}
                                   <div className="text-xs text-white/60 mt-2 text-right">
-                                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })
-                      )}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  </ScrollArea>
+                            );
+                          })
+                        )}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    </ScrollArea>
 
                   <div className="flex gap-3">
                     {/* Action Cards Section - only show if no connection is selected */}
@@ -1190,26 +1190,26 @@ export default function ChatPage() {
                               </div>
                               <div className="text-lg font-light text-white mb-2">Attach File</div>
                               <div className="text-sm text-white/60 font-light mb-4 text-center">Send encrypted files to your connections securely.</div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isUploadingFile}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploadingFile}
                                 className="border-white/20 text-white/60 hover:text-white h-12 px-4 w-full"
-                                title={`Attach file (max ${MAX_FILE_SIZE_MB}MB)`}
-                              >
-                                {isUploadingFile ? (
+                        title={`Attach file (max ${MAX_FILE_SIZE_MB}MB)`}
+                      >
+                        {isUploadingFile ? (
                                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                                ) : (
+                        ) : (
                                   <span className="flex items-center justify-center"><Paperclip className="h-5 w-5 mr-2" />Attach</span>
-                                )}
-                              </Button>
-                              <input
-                                ref={fileInputRef}
-                                type="file"
-                                onChange={handleFileSelect}
-                                className="hidden"
-                              />
+                        )}
+                      </Button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
                             </div>
                           </div>
                         </div>
@@ -1217,35 +1217,35 @@ export default function ChatPage() {
                     )}
                     {/* End Action Cards Section */}
 
-                    <div className="flex-1 relative">
-                      <Textarea
-                        placeholder={encryptionKey ? "Type your encrypted message..." : "Type your message..."}
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+                      <div className="flex-1 relative">
+                        <Textarea
+                          placeholder={encryptionKey ? "Type your encrypted message..." : "Type your message..."}
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
                         className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40 resize-none pr-12 h-12 text-base"
-                        rows={1}
-                      />
-                      {encryptionKey && (
+                          rows={1}
+                        />
+                        {encryptionKey && (
                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                           <Lock className="h-5 w-5 text-blue-400" />
-                        </div>
-                      )}
-                    </div>
+                          </div>
+                        )}
+                      </div>
                     <Button onClick={sendMessage} disabled={!newMessage.trim()} className="h-12 px-6">
                       <Send className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </>
-              ) : (
+                      </Button>
+                    </div>
+                  </>
+                ) : (
                 <div className="flex items-center justify-center h-[400px]">
-                  <div className="text-center">
+                    <div className="text-center">
                     <MessageCircle className="h-12 w-12 text-white/20 mx-auto mb-4" />
                     <p className="text-white/40 text-base">Select a connection from the left panel to start chatting</p>
+                    </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
+                )}
+              </CardContent>
           </div>
         </div>
       </main>

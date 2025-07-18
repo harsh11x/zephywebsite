@@ -61,8 +61,8 @@ export default function TextPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="frosted-glass">
-          <div className="animate-fade-in-up">
-            <TextCrypto />
+        <div className="animate-fade-in-up">
+        <TextCrypto />
           </div>
         </div>
       </main>
