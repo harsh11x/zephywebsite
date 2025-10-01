@@ -185,14 +185,20 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
 
   // Use the passed encryption key or load from localStorage
   useEffect(() => {
+    console.log('🔑 VoiceCall received encryptionKey:', encryptionKey)
     if (encryptionKey) {
+      console.log('🔑 Setting shared key from passed encryptionKey:', encryptionKey)
       setSharedKey(encryptionKey)
       setPendingKey(encryptionKey)
     } else {
+      console.log('🔑 No encryptionKey passed, loading from localStorage')
       const savedKey = localStorage.getItem('zephy-voice-shared-key')
       if (savedKey) {
+        console.log('🔑 Loaded saved key from localStorage:', savedKey)
         setSharedKey(savedKey)
         setPendingKey(savedKey)
+      } else {
+        console.log('🔑 No saved key found in localStorage')
       }
     }
   }, [encryptionKey])
@@ -444,7 +450,12 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
     if (!callTarget || !socket) return
     
     // STRICT ENCRYPTION KEY VALIDATION
+    console.log('🔑 Validating sharedKey for initiateCall:', sharedKey)
+    console.log('🔑 sharedKey length:', sharedKey?.length)
+    console.log('🔑 sharedKey trimmed length:', sharedKey?.trim().length)
+    
     if (!sharedKey || sharedKey.trim().length < 16) {
+      console.log('❌ Encryption key validation failed - key too short or empty')
       setShowKeyWarning(true)
       toast.error('Please set a valid shared encryption key (minimum 16 characters) before starting a call')
       return
@@ -452,9 +463,12 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
     
     // Additional validation for key strength
     if (sharedKey.length < 16) {
+      console.log('❌ Encryption key validation failed - key too short')
       toast.error('Encryption key must be at least 16 characters long')
       return
     }
+    
+    console.log('✅ Encryption key validation passed')
 
     try {
       setIsCallActive(true)

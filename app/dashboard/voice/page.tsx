@@ -65,16 +65,22 @@ export default function VoiceCallPage() {
   // Load encryption keys
   useEffect(() => {
     const savedKeys = localStorage.getItem('zephy-encryption-keys')
+    console.log('🔑 Loading encryption keys from localStorage:', savedKeys)
     if (savedKeys) {
       const keys = JSON.parse(savedKeys)
+      console.log('🔑 Parsed encryption keys:', keys)
       setEncryptionKeys(keys)
       
       // Find default key or first key
       const defaultKey = keys.find((k: EncryptionKey) => k.isDefault) || keys[0]
+      console.log('🔑 Default key found:', defaultKey)
       if (defaultKey) {
         setSelectedKey(defaultKey.id)
         setCurrentEncryptionKey(defaultKey.key)
+        console.log('🔑 Set current encryption key:', defaultKey.key)
       }
+    } else {
+      console.log('🔑 No encryption keys found in localStorage')
     }
   }, [])
 
