@@ -65,8 +65,8 @@ export default function VoiceCallPage() {
           return 'http://localhost:3001';
         }
         
-        // For deployed site, try HTTPS first, then HTTP
-        return 'https://3.111.208.77:3001';
+        // For deployed site, use HTTP directly (HTTPS causes mixed content issues)
+        return 'http://3.111.208.77:3001';
       };
 
       // Fallback URLs in order of preference
@@ -104,51 +104,36 @@ export default function VoiceCallPage() {
       newSocket.on('connect_error', (error) => {
         console.log('❌ Connection error:', error)
         
-        // If connection failed and we're on deployed site, try fallback URLs
+        // If connection failed, try fallback URLs
         if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
           console.log('🔄 Trying fallback URLs...')
           newSocket.disconnect()
           
-          // Try each fallback URL
-          let currentFallbackIndex = 0;
+          // Try domain fallback first
+          const fallbackSocket = io('http://chat.zephyrnsecurities.com:3001', {
+            auth: {
+              email: (user as any).email,
+              userId: (user as any).id
+            },
+            reconnection: true,
+            reconnectionAttempts: 3,
+            reconnectionDelay: 1000,
+            timeout: 10000
+          })
           
-          const tryNextFallback = () => {
-            if (currentFallbackIndex >= fallbackUrls.length) {
-              setConnectionStatus('error')
-              toast.error('All connection attempts failed')
-              return
-            }
-            
-            const fallbackUrl = fallbackUrls[currentFallbackIndex]
-            console.log(`🔄 Trying fallback ${currentFallbackIndex + 1}: ${fallbackUrl}`)
-            
-            const fallbackSocket = io(fallbackUrl, {
-              auth: {
-                email: (user as any).email,
-                userId: (user as any).id
-              },
-              reconnection: true,
-              reconnectionAttempts: 2,
-              reconnectionDelay: 1000,
-              timeout: 8000
-            })
-            
-            fallbackSocket.on('connect', () => {
-              setConnectionStatus('connected')
-              console.log(`✅ Connected to voice call server via fallback: ${fallbackUrl}`)
-              toast.success("Connected to voice call server")
-              setSocket(fallbackSocket)
-            })
-            
-            fallbackSocket.on('connect_error', (fallbackError) => {
-              console.log(`❌ Fallback ${currentFallbackIndex + 1} failed:`, fallbackError)
-              fallbackSocket.disconnect()
-              currentFallbackIndex++
-              setTimeout(tryNextFallback, 1000) // Try next fallback after 1 second
-            })
-          }
+          fallbackSocket.on('connect', () => {
+            setConnectionStatus('connected')
+            console.log('✅ Connected to voice call server via domain fallback')
+            toast.success("Connected to voice call server")
+            setSocket(fallbackSocket)
+          })
           
-          tryNextFallback()
+          fallbackSocket.on('connect_error', (fallbackError) => {
+            setConnectionStatus('error')
+            console.log('❌ Domain fallback also failed:', fallbackError)
+            toast.error(`Connection failed: ${fallbackError.message}`)
+          })
+          
           return
         }
         
