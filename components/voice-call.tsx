@@ -273,9 +273,11 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
       const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints)
       localStreamRef.current = stream
 
-      // Set up audio elements
+      // Set up audio elements - local audio should be muted to prevent echo
       if (localAudioRef.current) {
         localAudioRef.current.srcObject = stream
+        localAudioRef.current.muted = true // Prevent echo
+        localAudioRef.current.volume = 0 // Ensure no local audio playback
       }
       if (localVideoRef.current && hasVideo) {
         localVideoRef.current.srcObject = stream
@@ -305,6 +307,10 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
           remoteStreamRef.current = event.streams[0]
           if (remoteAudioRef.current) {
             remoteAudioRef.current.srcObject = event.streams[0]
+            remoteAudioRef.current.muted = false // Ensure remote audio plays
+            remoteAudioRef.current.volume = 1.0 // Full volume for remote audio
+            // Force play the audio
+            remoteAudioRef.current.play().catch(e => console.log('Audio play failed:', e))
           }
           if (remoteVideoRef.current && hasVideo) {
             remoteVideoRef.current.srcObject = event.streams[0]
@@ -469,7 +475,8 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
         offer: offer,
         publicKey: publicKeyString,
         callerEmail: userEmail,
-        hasVideo: hasVideo
+        hasVideo: hasVideo,
+        sharedKey: sharedKey // Include shared key for validation
       }
       
       socket.emit('voice_call_request', callData)
@@ -537,7 +544,8 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
         callId: incomingCallData.callId,
         answer: answer,
         publicKey: publicKeyString,
-        calleeEmail: userEmail
+        calleeEmail: userEmail,
+        sharedKey: sharedKey // Include shared key for validation
       })
       
       // Set up call session
@@ -765,6 +773,25 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
       setAvailableUsers(users.filter(email => email !== userEmail))
     })
 
+    // Handle voice call errors
+    socket.on('voice_call_error', (data: any) => {
+      console.log('Voice call error:', data)
+      setIsCallActive(false)
+      setCurrentCall(null)
+      setIsIncomingCall(false)
+      setIncomingCallData(null)
+      
+      if (data.code === 'INVALID_KEY') {
+        toast.error('Invalid encryption key. Please set a valid key (minimum 16 characters).')
+        setShowKeyWarning(true)
+      } else if (data.code === 'KEY_MISMATCH') {
+        toast.error('Encryption key mismatch. Both users must use the same key.')
+        setShowKeyWarning(true)
+      } else {
+        toast.error(data.message || 'Call failed')
+      }
+    })
+
     // Handle ICE candidates - CRITICAL for WebRTC connection
     socket.on('ice_candidate', async (data: any) => {
       console.log('Received ICE candidate:', data.candidate)
@@ -784,6 +811,7 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
       socket.off('voice_call_ended')
       socket.off('voice_call_rejected')
       socket.off('voice_users_available')
+      socket.off('voice_call_error')
       socket.off('ice_candidate')
     }
   }, [socket, currentCall, userEmail, establishEncryptedConnection])
@@ -1136,8 +1164,8 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
             </div>
 
             {/* Audio Elements */}
-            <audio ref={localAudioRef} autoPlay muted />
-            <audio ref={remoteAudioRef} autoPlay />
+            <audio ref={localAudioRef} autoPlay muted style={{ display: 'none' }} />
+            <audio ref={remoteAudioRef} autoPlay style={{ display: 'none' }} />
           </CardContent>
         </Card>
       ) : (

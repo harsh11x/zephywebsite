@@ -258,9 +258,19 @@ io.on('connection', (socket) => {
       console.warn('WARNING: hasVideo missing in incoming data, defaulting to false. Data:', data);
     }
     
-    const { targetEmail, offer, publicKey, callerEmail } = data;
+    const { targetEmail, offer, publicKey, callerEmail, sharedKey } = data;
     console.log('Processed voice_call_request:', { ...data, hasVideo });
     console.log(`📞 ${hasVideo ? 'Video' : 'Voice'} call request from ${callerEmail} to ${targetEmail}`);
+    
+    // STRICT ENCRYPTION KEY VALIDATION
+    if (!sharedKey || sharedKey.trim().length < 16) {
+      console.log(`❌ Call rejected: Invalid encryption key from ${callerEmail}`);
+      socket.emit('voice_call_error', { 
+        message: 'Invalid encryption key. Key must be at least 16 characters long.',
+        code: 'INVALID_KEY'
+      });
+      return;
+    }
     
     // Check if target user is online
     const targetUser = Array.from(connectedUsers.values()).find(user => user.email === targetEmail);
@@ -275,6 +285,7 @@ io.on('connection', (socket) => {
         callee: targetEmail,
         offer: offer,
         callerPublicKey: publicKey,
+        sharedKey: sharedKey,
         hasVideo: hasVideo,
         status: 'pending',
         startTime: new Date()
@@ -286,6 +297,7 @@ io.on('connection', (socket) => {
         callerEmail: callerEmail,
         offer: offer,
         publicKey: publicKey,
+        sharedKey: sharedKey,
         hasVideo: hasVideo,
         debug: 'VIDEO_FIX_TEST'
       };
@@ -300,7 +312,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('voice_call_answer', (data) => {
-    const { callId, answer, publicKey, calleeEmail } = data;
+    const { callId, answer, publicKey, calleeEmail, sharedKey } = data;
     
     console.log(`📞 Voice call answer from ${calleeEmail} for call ${callId}`);
     
@@ -309,6 +321,27 @@ io.on('connection', (socket) => {
     if (callData && typeof callData.hasVideo === 'boolean') {
       hasVideo = callData.hasVideo;
     }
+    
+    // STRICT ENCRYPTION KEY VALIDATION FOR ANSWER
+    if (!sharedKey || sharedKey.trim().length < 16) {
+      console.log(`❌ Call answer rejected: Invalid encryption key from ${calleeEmail}`);
+      socket.emit('voice_call_error', { 
+        message: 'Invalid encryption key. Key must be at least 16 characters long.',
+        code: 'INVALID_KEY'
+      });
+      return;
+    }
+    
+    // VALIDATE KEY MATCH
+    if (callData && callData.sharedKey !== sharedKey) {
+      console.log(`❌ Call answer rejected: Encryption key mismatch from ${calleeEmail}`);
+      socket.emit('voice_call_error', { 
+        message: 'Encryption key mismatch. Both users must use the same key.',
+        code: 'KEY_MISMATCH'
+      });
+      return;
+    }
+    
     if (callData && callData.callee === calleeEmail) {
       // Update call status
       callData.status = 'connected';
