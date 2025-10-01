@@ -71,7 +71,7 @@ export default function VoiceCallPage() {
 
       // Fallback URLs in order of preference
       const fallbackUrls = [
-        'http://chat.zephyrnsecurities.com:3001',
+        'http://chat.zephyrnsecurities.com',
         'http://3.111.208.77:3001'
       ];
 
