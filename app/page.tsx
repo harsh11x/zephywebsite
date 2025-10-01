@@ -106,8 +106,8 @@ export default function HomePage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative py-32 sm:py-40">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl relative z-10">
+      <section className="relative py-20 sm:py-28 md:py-32 lg:py-40">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl relative z-10">
           {/* Remove the static heading and subtitle here */}
           <motion.div
             style={{ y, opacity }}
@@ -120,20 +120,20 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="text-6xl sm:text-8xl lg:text-9xl font-light tracking-tight mb-8"
+              className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-light tracking-tight mb-6 sm:mb-8"
             >
               <span className="block text-white">Enterprise</span>
               <span className="block text-white/60">Cybersecurity</span>
               <span className="block text-white/30">Redefined</span>
             </motion.h1>
-            <Badge className="bg-white/5 text-white/80 border border-white/10 px-6 py-2 text-sm font-medium backdrop-blur-sm mb-8">
+            <Badge className="bg-white/5 text-white/80 border border-white/10 px-4 sm:px-6 py-2 text-xs sm:text-sm font-medium backdrop-blur-sm mb-6 sm:mb-8">
               Trusted by 15,000+ Global Enterprises
             </Badge>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              className="text-xl sm:text-2xl leading-relaxed text-white/60 max-w-4xl mx-auto mb-12 font-light"
+              className="text-base sm:text-lg md:text-xl lg:text-2xl leading-relaxed text-white/60 max-w-4xl mx-auto mb-8 sm:mb-10 md:mb-12 font-light px-2 sm:px-0"
             >
               Military-grade security platform powered by quantum-resistant encryption and AI-driven threat
               intelligence.
@@ -144,26 +144,26 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.8 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-6"
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
             >
               {user ? (
                 <Link href="/dashboard">
                   <Button
                     size="lg"
-                    className="bg-white text-black hover:bg-white/90 px-12 py-4 text-lg font-medium transform hover:scale-105 transition-all duration-300 rounded-none"
+                    className="bg-white text-black hover:bg-white/90 px-8 sm:px-10 md:px-12 py-3 sm:py-4 text-base sm:text-lg font-medium transform hover:scale-105 transition-all duration-300 rounded-none w-full sm:w-auto"
                   >
                     Access Command Center
-                    <ArrowRight className="ml-2 w-5 h-5" />
+                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
                 </Link>
               ) : (
                 <Link href="/pricing">
                   <Button
                     size="lg"
-                    className="bg-white text-black hover:bg-white/90 px-12 py-4 text-lg font-medium transform hover:scale-105 transition-all duration-300 rounded-none"
+                    className="bg-white text-black hover:bg-white/90 px-8 sm:px-10 md:px-12 py-3 sm:py-4 text-base sm:text-lg font-medium transform hover:scale-105 transition-all duration-300 rounded-none w-full sm:w-auto"
                   >
                     Start Enterprise Trial
-                    <ArrowRight className="ml-2 w-5 h-5" />
+                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
                 </Link>
               )}
@@ -171,7 +171,7 @@ export default function HomePage() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-white/20 text-white hover:bg-white/5 px-12 py-4 text-lg font-medium backdrop-blur-sm rounded-none"
+                  className="border-white/20 text-white hover:bg-white/5 px-8 sm:px-10 md:px-12 py-3 sm:py-4 text-base sm:text-lg font-medium backdrop-blur-sm rounded-none w-full sm:w-auto"
                 >
                   Watch Demo
                 </Button>
@@ -182,25 +182,25 @@ export default function HomePage() {
       </section>
 
       {/* Real-time Stats */}
-      <section className="py-20 border-y border-white/10">
-        <div className="container">
+      <section className="py-12 sm:py-16 md:py-20 border-y border-white/10">
+        <div className="container px-3 sm:px-4 md:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center"
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 text-center"
           >
-            <div className="p-4">
-              <h3 className="text-5xl font-light text-white">
+            <div className="p-2 sm:p-4">
+              <h3 className="text-3xl sm:text-4xl md:text-5xl font-light text-white">
                 <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 3, repeat: Infinity }}>
                   {stats.clients.toLocaleString()}
                 </motion.span>
               </h3>
-              <p className="text-white/60 mt-2">Global Clients</p>
+              <p className="text-xs sm:text-sm text-white/60 mt-2">Global Clients</p>
             </div>
-            <div className="p-4">
-              <h3 className="text-5xl font-light text-white">
+            <div className="p-2 sm:p-4">
+              <h3 className="text-3xl sm:text-4xl md:text-5xl font-light text-white">
                 <motion.span
                   animate={{ opacity: [0, 1, 0] }}
                   transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
@@ -208,10 +208,10 @@ export default function HomePage() {
                   {Math.floor(stats.threats / 1000000)}M+
                 </motion.span>
               </h3>
-              <p className="text-white/60 mt-2">Threats Neutralized</p>
+              <p className="text-xs sm:text-sm text-white/60 mt-2">Threats Neutralized</p>
             </div>
-            <div className="p-4">
-              <h3 className="text-5xl font-light text-white">
+            <div className="p-2 sm:p-4">
+              <h3 className="text-3xl sm:text-4xl md:text-5xl font-light text-white">
                 <motion.span
                   animate={{ opacity: [0, 1, 0] }}
                   transition={{ duration: 3, repeat: Infinity, delay: 1 }}
@@ -219,10 +219,10 @@ export default function HomePage() {
                   {stats.responseTime.toFixed(2)}s
                 </motion.span>
               </h3>
-              <p className="text-white/60 mt-2">Avg. Response Time</p>
+              <p className="text-xs sm:text-sm text-white/60 mt-2">Avg. Response Time</p>
             </div>
-            <div className="p-4">
-              <h3 className="text-5xl font-light text-white">
+            <div className="p-2 sm:p-4">
+              <h3 className="text-3xl sm:text-4xl md:text-5xl font-light text-white">
                 <motion.span
                   animate={{ opacity: [0, 1, 0] }}
                   transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
@@ -230,7 +230,7 @@ export default function HomePage() {
                   {stats.uptime.toFixed(2)}%
                 </motion.span>
               </h3>
-              <p className="text-white/60 mt-2">Platform Uptime</p>
+              <p className="text-xs sm:text-sm text-white/60 mt-2">Platform Uptime</p>
             </div>
           </motion.div>
         </div>

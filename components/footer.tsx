@@ -35,12 +35,12 @@ export default function Footer() {
 
   return (
     <footer className="border-t-[0.5px] border-white/10 bg-black">
-      <div className="container py-12 md:py-20 px-4 sm:px-6 lg:px-8">
+      <div className="container py-8 sm:py-12 md:py-16 lg:py-20 px-3 sm:px-4 md:px-6 lg:px-8">
         {/* Currency Selector */}
-        <div className="flex justify-end mb-8">
+        <div className="flex justify-center sm:justify-end mb-6 sm:mb-8">
           <CurrencySelector />
         </div>
-        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-5 gap-8">
+        <div className="hidden lg:grid lg:grid-cols-5 gap-6 xl:gap-8">
           <div className="lg:col-span-2 space-y-6">
             <Link href="/" className="flex items-center space-x-3">
               <div className="p-2 bg-white/10">
@@ -104,7 +104,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="md:hidden">
+        <div className="lg:hidden">
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="solutions">
               <AccordionTrigger className="text-sm font-semibold text-white/80 tracking-wider uppercase">Solutions</AccordionTrigger>
@@ -165,16 +165,19 @@ export default function Footer() {
           </Accordion>
         </div>
 
-        <div className="mt-12 border-t-[0.5px] border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+        <div className="mt-8 sm:mt-10 lg:mt-12 border-t-[0.5px] border-white/10 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
           <p className="text-xs text-white/40 font-light text-center sm:text-left">
             © {new Date().getFullYear()} Zephyrn Securities Inc. All rights reserved.
           </p>
-          <div className="flex items-center space-x-4 text-xs text-white/30 font-light">
-            <span>Enterprise Grade</span>
+          <div className="flex items-center space-x-2 sm:space-x-4 text-xs text-white/30 font-light">
+            <span className="hidden sm:inline">Enterprise Grade</span>
+            <span className="sm:hidden">Enterprise</span>
             <div className="w-1 h-1 bg-white/30 rounded-full" />
-            <span>Quantum-Ready</span>
+            <span className="hidden sm:inline">Quantum-Ready</span>
+            <span className="sm:hidden">Quantum</span>
             <div className="w-1 h-1 bg-white/30 rounded-full" />
-            <span>Global Scale</span>
+            <span className="hidden sm:inline">Global Scale</span>
+            <span className="sm:hidden">Global</span>
           </div>
         </div>
       </div>
@@ -188,9 +191,9 @@ function CurrencySelector() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="flex items-center px-4 py-2 bg-white/10 text-white rounded-md hover:bg-white/20 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <span className="mr-2 font-medium">{current ? current.label : currency}</span>
-          <ChevronDown className="w-4 h-4" />
+        <button className="flex items-center px-3 sm:px-4 py-2 bg-white/10 text-white rounded-md hover:bg-white/20 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          <span className="mr-1 sm:mr-2 font-medium">{current ? current.label : currency}</span>
+          <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-2 bg-black border-white/10">

@@ -37,33 +37,33 @@ export default function Header() {
       transition={{ duration: 0.8, ease: "easeOut" }}
         style={{ width: '100%' }}
     >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl flex h-16 items-center justify-between">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl flex h-14 sm:h-16 items-center justify-between">
         <div className="flex items-center">
-          <Link href="/" className="flex items-center space-x-4 group">
-              <div className="p-2 bg-white/10 backdrop-blur-sm">
+          <Link href="/" className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 group">
+              <div className="p-1.5 sm:p-2 bg-white/10 backdrop-blur-sm">
                 <div>
             <motion.div
               whileHover={{ rotate: 180 }}
               transition={{ duration: 0.6, ease: "easeInOut" }}
                     style={{ display: 'inline-block' }}
             >
-              <Shield className="h-6 w-6 text-white" />
+              <Shield className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
             </motion.div>
                 </div>
               </div>
             <div className="flex flex-col">
-              <span className="text-xl font-light text-white tracking-wide">ZEPHYRN</span>
+              <span className="text-lg sm:text-xl font-light text-white tracking-wide">ZEPHYRN</span>
               <span className="text-xs text-white/40 font-light tracking-[0.2em]">SECURITIES</span>
             </div>
           </Link>
         </div>
 
-          <nav className="hidden md:flex items-center space-x-8 text-sm font-light bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg rounded-xl px-4 py-1 mt-0">
+          <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8 text-sm font-light bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg rounded-xl px-3 md:px-4 py-1 mt-0">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="relative transition-all duration-300 hover:text-white text-white/60 group py-1 px-3 rounded-lg hover:bg-white/10"
+                className="relative transition-all duration-300 hover:text-white text-white/60 group py-1 px-2 md:px-3 rounded-lg hover:bg-white/10 whitespace-nowrap"
               >
                 {item.name}
                 <span className="absolute -bottom-1 left-0 w-0 h-px bg-white group-hover:w-full transition-all duration-300"></span>
@@ -76,9 +76,9 @@ export default function Header() {
           <SheetTrigger asChild>
             <Button
               variant="ghost"
-              className="mr-2 px-0 text-base hover:bg-white/10 focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+              className="mr-1 sm:mr-2 px-2 sm:px-3 text-base hover:bg-white/10 focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 lg:hidden"
             >
-              <Menu className="h-6 w-6 text-white" />
+              <Menu className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </SheetTrigger>
@@ -128,15 +128,15 @@ export default function Header() {
           </SheetContent>
         </Sheet>
 
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-2 md:space-x-3 lg:space-x-4">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <div>
                       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ display: 'inline-block' }}>
-                    <Button variant="ghost" size="sm" className="hover:bg-white/10 text-white font-light">
-                      <User className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">{user.email?.split("@")[0]}</span>
+                    <Button variant="ghost" size="sm" className="hover:bg-white/10 text-white font-light px-2 md:px-3">
+                      <User className="h-4 w-4 mr-1 md:mr-2" />
+                      <span className="hidden xl:inline text-sm">{user.email?.split("@")[0]}</span>
                     </Button>
                   </motion.div>
                     </div>
@@ -162,14 +162,14 @@ export default function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 md:space-x-3 lg:space-x-4">
                   <div>
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ display: 'inline-block' }}>
                   <Link href="/auth">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-white/60 hover:text-white hover:bg-white/10 font-light"
+                      className="text-white/60 hover:text-white hover:bg-white/10 font-light px-2 md:px-3 text-sm"
                     >
                       Sign In
                     </Button>
@@ -179,7 +179,7 @@ export default function Header() {
                   <div>
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ display: 'inline-block' }}>
                   <Link href="/pricing">
-                    <Button size="sm" className="bg-white text-black hover:bg-white/90 font-medium px-6 rounded-none">
+                    <Button size="sm" className="bg-white text-black hover:bg-white/90 font-medium px-3 md:px-4 lg:px-6 rounded-none text-sm">
                       Start Trial
                     </Button>
                   </Link>
