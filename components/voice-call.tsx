@@ -267,7 +267,9 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          sampleRate: 48000,
+          channelCount: 1
         },
         video: hasVideo ? {
           width: { ideal: 1280 },
@@ -284,9 +286,11 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
         localAudioRef.current.srcObject = stream
         localAudioRef.current.muted = true // Prevent echo
         localAudioRef.current.volume = 0 // Ensure no local audio playback
+        localAudioRef.current.autoplay = true
       }
       if (localVideoRef.current && hasVideo) {
         localVideoRef.current.srcObject = stream
+        localVideoRef.current.autoplay = true
       }
 
       // Create peer connection with STUN servers
@@ -298,28 +302,47 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
           { urls: 'stun:stun3.l.google.com:19302' },
           { urls: 'stun:stun4.l.google.com:19302' }
         ],
-        iceCandidatePoolSize: 10
+        iceCandidatePoolSize: 10,
+        bundlePolicy: 'max-bundle',
+        rtcpMuxPolicy: 'require'
       })
 
       // Add local stream tracks
       stream.getTracks().forEach(track => {
+        console.log('Adding local track:', track.kind, track.label, 'enabled:', track.enabled)
         peerConnection.addTrack(track, stream)
       })
 
       // Handle remote stream
       peerConnection.ontrack = (event) => {
-        console.log('Remote track received:', event.track.kind)
+        console.log('Remote track received:', event.track.kind, event.track.label)
         if (event.streams && event.streams[0]) {
           remoteStreamRef.current = event.streams[0]
+          console.log('Remote stream tracks:', event.streams[0].getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, muted: t.muted })))
+          
           if (remoteAudioRef.current) {
             remoteAudioRef.current.srcObject = event.streams[0]
             remoteAudioRef.current.muted = false // Ensure remote audio plays
             remoteAudioRef.current.volume = 1.0 // Full volume for remote audio
-            // Force play the audio
-            remoteAudioRef.current.play().catch(e => console.log('Audio play failed:', e))
+            remoteAudioRef.current.autoplay = true
+            
+            // Force play the audio with better error handling
+            const playPromise = remoteAudioRef.current.play()
+            if (playPromise !== undefined) {
+              playPromise.then(() => {
+                console.log('✅ Remote audio playing successfully')
+              }).catch(e => {
+                console.log('❌ Audio play failed:', e)
+                // Try again after a short delay
+                setTimeout(() => {
+                  remoteAudioRef.current?.play().catch(console.log)
+                }, 1000)
+              })
+            }
           }
           if (remoteVideoRef.current && hasVideo) {
             remoteVideoRef.current.srcObject = event.streams[0]
+            remoteVideoRef.current.autoplay = true
           }
         }
       }
@@ -1204,8 +1227,19 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
             </div>
 
             {/* Audio Elements */}
-            <audio ref={localAudioRef} autoPlay muted style={{ display: 'none' }} />
-            <audio ref={remoteAudioRef} autoPlay style={{ display: 'none' }} />
+            <audio 
+              ref={localAudioRef} 
+              autoPlay 
+              muted 
+              playsInline
+              style={{ display: 'none' }} 
+            />
+            <audio 
+              ref={remoteAudioRef} 
+              autoPlay 
+              playsInline
+              style={{ display: 'none' }} 
+            />
           </CardContent>
         </Card>
       ) : (
