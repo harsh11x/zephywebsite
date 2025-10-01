@@ -30,6 +30,15 @@ import VoiceCall from "@/components/voice-call"
 import { io, Socket } from "socket.io-client"
 import { toast } from "sonner"
 import GlassPanel from "@/components/GlassPanel"
+import { useState, useEffect } from "react"
+
+interface EncryptionKey {
+  id: string
+  name: string
+  key: string
+  createdAt: Date
+  isDefault: boolean
+}
 
 export default function VoiceCallPage() {
   const { user, loading } = useAuth()
@@ -42,12 +51,33 @@ export default function VoiceCallPage() {
     encryptedCalls: 0,
     videoCalls: 0
   })
+  
+  // Encryption key management
+  const [encryptionKeys, setEncryptionKeys] = useState<EncryptionKey[]>([])
+  const [selectedKey, setSelectedKey] = useState<string>("")
+  const [currentEncryptionKey, setCurrentEncryptionKey] = useState<string>("")
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/auth")
     }
   }, [user, loading, router])
+
+  // Load encryption keys
+  useEffect(() => {
+    const savedKeys = localStorage.getItem('zephy-encryption-keys')
+    if (savedKeys) {
+      const keys = JSON.parse(savedKeys)
+      setEncryptionKeys(keys)
+      
+      // Find default key or first key
+      const defaultKey = keys.find((k: EncryptionKey) => k.isDefault) || keys[0]
+      if (defaultKey) {
+        setSelectedKey(defaultKey.id)
+        setCurrentEncryptionKey(defaultKey.key)
+      }
+    }
+  }, [])
 
   // Initialize socket connection
   useEffect(() => {
@@ -245,6 +275,7 @@ export default function VoiceCallPage() {
                 <VoiceCall 
                   userEmail={(user as any).email}
                   socket={socket}
+                  encryptionKey={currentEncryptionKey}
                   onCallEnd={() => {
                     // Update stats when call ends
                     if (socket) {

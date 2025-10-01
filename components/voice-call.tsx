@@ -133,12 +133,13 @@ interface VoiceCallProps {
   userEmail: string
   socket: any
   onCallEnd?: () => void
+  encryptionKey?: string // Pass the chat encryption key
 }
 
 // Add a ringtone sound (public domain)
 const RINGTONE_URL = "/ringtone.mp3" // Place a ringtone file in public/
 
-export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallProps) {
+export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey }: VoiceCallProps) {
   const [isCallActive, setIsCallActive] = useState(false)
   const [currentCall, setCurrentCall] = useState<CallSession | null>(null)
   const [callTarget, setCallTarget] = useState('')
@@ -182,14 +183,19 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
   // Check if permissions are OK - for voice calls only need mic and notifications, for video calls need all
   const permissionsOk = micPermission === 'granted' && notifPermission === 'granted' && (hasVideo ? cameraPermission === 'granted' : true)
 
-  // On mount, load key from localStorage
+  // Use the passed encryption key or load from localStorage
   useEffect(() => {
-    const savedKey = localStorage.getItem('zephy-voice-shared-key')
-    if (savedKey) {
-      setSharedKey(savedKey)
-      setPendingKey(savedKey)
+    if (encryptionKey) {
+      setSharedKey(encryptionKey)
+      setPendingKey(encryptionKey)
+    } else {
+      const savedKey = localStorage.getItem('zephy-voice-shared-key')
+      if (savedKey) {
+        setSharedKey(savedKey)
+        setPendingKey(savedKey)
+      }
     }
-  }, [])
+  }, [encryptionKey])
 
   // Save key to localStorage on change
   useEffect(() => {
@@ -430,9 +436,17 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
   // Initiate call
   const initiateCall = async () => {
     if (!callTarget || !socket) return
-    if (!sharedKey) {
+    
+    // STRICT ENCRYPTION KEY VALIDATION
+    if (!sharedKey || sharedKey.trim().length < 16) {
       setShowKeyWarning(true)
-      toast.error('Please set a shared key before starting a call')
+      toast.error('Please set a valid shared encryption key (minimum 16 characters) before starting a call')
+      return
+    }
+    
+    // Additional validation for key strength
+    if (sharedKey.length < 16) {
+      toast.error('Encryption key must be at least 16 characters long')
       return
     }
 
@@ -486,6 +500,13 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
   // Answer incoming call
   const answerCall = async () => {
     if (!incomingCallData || !socket) return
+
+    // STRICT ENCRYPTION KEY VALIDATION FOR ANSWERING CALLS
+    if (!sharedKey || sharedKey.trim().length < 16) {
+      setShowKeyWarning(true)
+      toast.error('Please set a valid shared encryption key (minimum 16 characters) before answering the call')
+      return
+    }
 
     try {
       console.log('📞 Answering call:', incomingCallData)
