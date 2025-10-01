@@ -65,14 +65,13 @@ export default function VoiceCallPage() {
           return 'http://localhost:3001';
         }
         
-        // For deployed site, use HTTPS (after setting up SSL on AWS)
-        return 'https://3.111.208.77';
+        // For deployed site, use HTTPS domain (SSL certificate on domain)
+        return 'https://chat.zephyrnsecurities.com';
       };
 
       // Fallback URLs in order of preference
       const fallbackUrls = [
-        'https://chat.zephyrnsecurities.com',
-        'https://3.111.208.77'
+        'https://chat.zephyrnsecurities.com'
       ];
 
       const newSocket = io(
