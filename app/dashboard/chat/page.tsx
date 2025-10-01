@@ -139,6 +139,16 @@ export default function ChatPage() {
     return session ? session.messages : []
   }
 
+  // Get current messages for rendering (memoized)
+  const currentMessages = getCurrentMessages()
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [currentMessages])
+
   // Helper function to add message to current chat session
   const addMessageToCurrentSession = (message: Message) => {
     if (!selectedConnection || !user) return
@@ -710,20 +720,25 @@ export default function ChatPage() {
     })
 
     // Add the original plain text message to the chat for the sender
-      setChatSessions(prev => {
-        const sessionKey = getSortedConnectionId(selectedConnection.email, (user as any).email)
-        const currentSession = prev.get(sessionKey) || {
-          connectionId: sessionKey,
-          messages: [],
-          lastActivity: new Date(),
-          unreadCount: 0
-        }
+    setChatSessions(prev => {
+      const sessionKey = getSortedConnectionId(selectedConnection.email, (user as any).email)
+      const currentSession = prev.get(sessionKey) || {
+        connectionId: sessionKey,
+        messages: [],
+        lastActivity: new Date(),
+        unreadCount: 0
+      }
+    
+      // Create the message to add (show plain text to sender)
+      const messageToAdd = {
+        ...message,
+        content: newMessage, // Show plain text to sender
+        decrypted: true
+      };
       
-      const updatedMessages = [...currentSession.messages, {
-      ...message,
-      content: newMessage, // Show plain text to sender
-      decrypted: true
-        }];
+      // Properly append to existing messages
+      const updatedMessages = [...currentSession.messages, messageToAdd];
+      
       const newSessions = new Map(prev);
       newSessions.set(sessionKey, {
         ...currentSession,
@@ -731,6 +746,7 @@ export default function ChatPage() {
         lastActivity: new Date()
       })
       
+      console.log('📤 Added message to session:', sessionKey, 'Total messages:', updatedMessages.length);
       return newSessions
     })
     setNewMessage("")
@@ -1149,12 +1165,12 @@ export default function ChatPage() {
                   <>
                   <ScrollArea className="h-[400px] border border-white/10 rounded-lg p-6">
                     <div className="space-y-6">
-                      {getCurrentMessages().length === 0 ? (
+                      {currentMessages.length === 0 ? (
                         <div className="text-white/40 text-sm text-center py-12">
                             No messages yet. Start the conversation!
                         </div>
                         ) : (
-                        getCurrentMessages().map((message) => {
+                        currentMessages.map((message) => {
                             const isSender = message.sender === (user as any).email;
                             const initials = message.sender
                               ? message.sender.split("@")[0].slice(0, 2).toUpperCase()
