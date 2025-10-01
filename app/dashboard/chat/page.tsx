@@ -98,6 +98,14 @@ function mergeMessagesForEmail(chatSessions: Map<string, ChatSession>, email: st
   return merged;
 }
 
+// Helper to ensure message timestamps are Date objects
+function ensureMessageTimestamps(message: Message): Message {
+  return {
+    ...message,
+    timestamp: message.timestamp instanceof Date ? message.timestamp : new Date(message.timestamp)
+  };
+}
+
 export default function ChatPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
@@ -245,8 +253,21 @@ export default function ChatPage() {
       const savedSessions = localStorage.getItem('zephy-chat-sessions');
       if (savedSessions) {
         const parsed = JSON.parse(savedSessions);
-        // Convert plain object back to Map
-        const restored = new Map<string, ChatSession>(Object.entries(parsed));
+        // Convert plain object back to Map and fix timestamps
+        const restored = new Map<string, ChatSession>();
+        Object.entries(parsed).forEach(([key, session]: [string, any]) => {
+          // Fix timestamps in messages
+          const fixedMessages = session.messages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }));
+          
+          restored.set(key, {
+            ...session,
+            messages: fixedMessages,
+            lastActivity: new Date(session.lastActivity)
+          });
+        });
         setChatSessions(restored);
       }
     } catch (err) {
@@ -474,10 +495,13 @@ export default function ChatPage() {
             unreadCount: 0
           };
           
+          // Ensure message timestamps are Date objects
+          const fixedDisplayMessage = ensureMessageTimestamps(displayMessage);
+          
           // Create a completely new session object to ensure React detects the change
           const updatedSession = {
             connectionId: sessionId,
-            messages: [...currentSession.messages, displayMessage], // Properly append new message
+            messages: [...currentSession.messages, fixedDisplayMessage], // Properly append new message
             lastActivity: new Date(),
             unreadCount: currentSession.unreadCount + 1
           };
@@ -487,7 +511,7 @@ export default function ChatPage() {
           
           console.log('📨 Message added to session:', sessionId);
           console.log('📊 Total messages in session:', updatedSession.messages.length);
-          console.log('📝 Latest message:', displayMessage.content.substring(0, 50) + '...');
+          console.log('📝 Latest message:', fixedDisplayMessage.content.substring(0, 50) + '...');
           
           return newSessions;
         });
@@ -739,11 +763,11 @@ export default function ChatPage() {
       }
     
       // Create the message to add (show plain text to sender)
-      const messageToAdd = {
+      const messageToAdd = ensureMessageTimestamps({
         ...message,
         content: newMessage, // Show plain text to sender
         decrypted: true
-      };
+      });
       
       // Create a completely new session object to ensure React detects the change
       const updatedSession = {
@@ -1190,7 +1214,7 @@ export default function ChatPage() {
                               : "U";
                             return (
                               <div
-                                key={`${message.id}-${index}-${message.timestamp.getTime()}`}
+                                key={`${message.id}-${index}-${message.timestamp instanceof Date ? message.timestamp.getTime() : new Date(message.timestamp).getTime()}`}
                                 className={`flex ${isSender ? 'justify-end' : 'justify-start'}`}
                               >
                               <div className={`flex items-end gap-3 max-w-md lg:max-w-lg xl:max-w-xl ${isSender ? 'flex-row-reverse' : ''}`}>
