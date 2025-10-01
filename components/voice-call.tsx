@@ -306,6 +306,17 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
         }
       }
 
+      // Handle ICE candidates - CRITICAL for WebRTC connection
+      peerConnection.onicecandidate = (event) => {
+        console.log('ICE candidate generated:', event.candidate)
+        if (event.candidate && socket) {
+          socket.emit('ice_candidate', {
+            candidate: event.candidate,
+            targetEmail: callTarget || incomingCallData?.callerEmail
+          })
+        }
+      }
+
       // Handle connection state changes
       peerConnection.onconnectionstatechange = () => {
         console.log('Connection state:', peerConnection.connectionState)
@@ -315,6 +326,15 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
         } else if (peerConnection.connectionState === 'failed') {
           setConnectionQuality('poor')
           toast.error('Call connection failed')
+          // Try to reconnect
+          setTimeout(() => {
+            if (peerConnection.connectionState === 'failed') {
+              console.log('Attempting to restart ICE...')
+              peerConnection.restartIce()
+            }
+          }, 2000)
+        } else if (peerConnection.connectionState === 'connecting') {
+          setConnectionQuality('good')
         }
       }
 
@@ -327,6 +347,21 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
           setConnectionQuality('good')
         } else if (peerConnection.iceConnectionState === 'failed') {
           setConnectionQuality('poor')
+          console.log('ICE connection failed, attempting restart...')
+          // Try to restart ICE
+          setTimeout(() => {
+            if (peerConnection.iceConnectionState === 'failed') {
+              peerConnection.restartIce()
+            }
+          }, 1000)
+        } else if (peerConnection.iceConnectionState === 'disconnected') {
+          setConnectionQuality('poor')
+          console.log('ICE connection disconnected, attempting restart...')
+          setTimeout(() => {
+            if (peerConnection.iceConnectionState === 'disconnected') {
+              peerConnection.restartIce()
+            }
+          }, 1000)
         }
       }
 
@@ -453,6 +488,7 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
     if (!incomingCallData || !socket) return
 
     try {
+      console.log('📞 Answering call:', incomingCallData)
       setIsCallActive(true)
       setIsIncomingCall(false)
       
@@ -465,14 +501,17 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
       // Initialize WebRTC
       const peerConnection = await initializeWebRTC()
       
-      // Set remote description
+      // Set remote description FIRST
+      console.log('Setting remote description:', incomingCallData.offer)
       await peerConnection.setRemoteDescription(incomingCallData.offer)
       
       // Create answer
+      console.log('Creating answer...')
       const answer = await peerConnection.createAnswer()
       await peerConnection.setLocalDescription(answer)
       
       // Send answer
+      console.log('Sending answer to server...')
       socket.emit('voice_call_answer', {
         callId: incomingCallData.callId,
         answer: answer,
@@ -480,15 +519,12 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
         calleeEmail: userEmail
       })
       
-      // Establish encryption
-      await establishEncryptedConnection(incomingCallData.publicKey)
-      
       // Set up call session
       const callSession: CallSession = {
         id: incomingCallData.callId,
         caller: incomingCallData.callerEmail,
         callee: userEmail,
-        status: 'connected',
+        status: 'connecting', // Start as connecting, will be updated when connected
         startTime: new Date(),
         isInitiator: false,
         hasVideo: incomingCallData.hasVideo || false
@@ -497,7 +533,15 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
       setCurrentCall(callSession)
       setIncomingCallData(null)
       
-      toast.success('Call connected')
+      // Establish encryption after WebRTC is set up
+      try {
+        await establishEncryptedConnection(incomingCallData.publicKey)
+        console.log('✅ Encryption established')
+      } catch (encryptionError) {
+        console.warn('Encryption failed, but call can continue:', encryptionError)
+      }
+      
+      toast.success('Call answered, connecting...')
       
     } catch (error) {
       console.error('Failed to answer call:', error)
@@ -574,6 +618,37 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
       
     } catch (error) {
       console.error('Error ending call:', error)
+    }
+  }
+
+  // Reconnect call if connection fails
+  const reconnectCall = async () => {
+    if (!currentCall || !socket) return
+    
+    try {
+      console.log('🔄 Attempting to reconnect call...')
+      
+      // Reinitialize WebRTC
+      const peerConnection = await initializeWebRTC()
+      
+      if (currentCall.isInitiator) {
+        // Recreate offer for initiator
+        const offer = await peerConnection.createOffer()
+        await peerConnection.setLocalDescription(offer)
+        
+        socket.emit('voice_call_request', {
+          targetEmail: currentCall.callee,
+          offer: offer,
+          publicKey: await SecureVoiceCrypto.exportPublicKey(keyPairRef.current!.publicKey),
+          callerEmail: userEmail,
+          hasVideo: currentCall.hasVideo
+        })
+      }
+      
+      toast.info('Attempting to reconnect...')
+    } catch (error) {
+      console.error('Failed to reconnect call:', error)
+      toast.error('Reconnection failed')
     }
   }
 
@@ -669,12 +744,26 @@ export default function VoiceCall({ userEmail, socket, onCallEnd }: VoiceCallPro
       setAvailableUsers(users.filter(email => email !== userEmail))
     })
 
+    // Handle ICE candidates - CRITICAL for WebRTC connection
+    socket.on('ice_candidate', async (data: any) => {
+      console.log('Received ICE candidate:', data.candidate)
+      if (peerConnectionRef.current && data.candidate) {
+        try {
+          await peerConnectionRef.current.addIceCandidate(data.candidate)
+          console.log('ICE candidate added successfully')
+        } catch (error) {
+          console.error('Failed to add ICE candidate:', error)
+        }
+      }
+    })
+
     return () => {
       socket.off('voice_call_incoming')
       socket.off('voice_call_answered')
       socket.off('voice_call_ended')
       socket.off('voice_call_rejected')
       socket.off('voice_users_available')
+      socket.off('ice_candidate')
     }
   }, [socket, currentCall, userEmail, establishEncryptedConnection])
 

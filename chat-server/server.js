@@ -408,6 +408,21 @@ io.on('connection', (socket) => {
     const stats = callStats.get(socket.userEmail) || { totalCalls: 0, totalDuration: 0, encryptedCalls: 0, videoCalls: 0 };
     socket.emit('voice_call_stats', stats);
   });
+
+  // Handle ICE candidates - CRITICAL for WebRTC connection
+  socket.on('ice_candidate', (data) => {
+    const { candidate, targetEmail } = data;
+    console.log(`🧊 ICE candidate from ${socket.userEmail} to ${targetEmail}`);
+    
+    if (targetEmail) {
+      // Forward ICE candidate to target user
+      io.to(targetEmail).emit('ice_candidate', {
+        candidate: candidate,
+        fromEmail: socket.userEmail
+      });
+      console.log(`🧊 ICE candidate forwarded to ${targetEmail}`);
+    }
+  });
 });
 
 // Health check endpoint
