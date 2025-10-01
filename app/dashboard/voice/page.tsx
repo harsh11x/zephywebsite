@@ -30,7 +30,6 @@ import VoiceCall from "@/components/voice-call"
 import { io, Socket } from "socket.io-client"
 import { toast } from "sonner"
 import GlassPanel from "@/components/GlassPanel"
-import { useState, useEffect } from "react"
 
 interface EncryptionKey {
   id: string
