@@ -277,14 +277,14 @@ export default function ChatPage() {
           return 'http://localhost:3001';
         }
         
-        // For deployed site, use HTTP directly (HTTPS causes mixed content issues)
-        return 'http://3.111.208.77:3001';
+        // For deployed site, use HTTPS (after setting up SSL on AWS)
+        return 'https://3.111.208.77';
       };
 
       // Fallback URLs in order of preference
       const fallbackUrls = [
-        'http://chat.zephyrnsecurities.com:3001',
-        'http://3.111.208.77:3001'
+        'https://chat.zephyrnsecurities.com',
+        'https://3.111.208.77'
       ];
 
       const newSocket = io(
@@ -323,7 +323,7 @@ export default function ChatPage() {
           newSocket.disconnect()
           
           // Try domain fallback first
-          const fallbackSocket = io('http://chat.zephyrnsecurities.com:3001', {
+          const fallbackSocket = io('https://chat.zephyrnsecurities.com', {
             auth: {
               email: (user as any).email,
               userId: (user as any).id
