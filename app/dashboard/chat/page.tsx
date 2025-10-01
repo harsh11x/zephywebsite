@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useMemo } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -140,7 +140,10 @@ export default function ChatPage() {
   }
 
   // Get current messages for rendering (memoized)
-  const currentMessages = getCurrentMessages()
+  const currentMessages = useMemo(() => {
+    const session = getCurrentChatSession()
+    return session ? session.messages : []
+  }, [selectedConnection, chatSessions])
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -470,16 +473,22 @@ export default function ChatPage() {
             lastActivity: new Date(),
             unreadCount: 0
           };
-          // Append the new message to the existing messages array
-          const updatedMessages = [...currentSession.messages, displayMessage];
-          const newSessions = new Map(prev);
-          newSessions.set(sessionId, {
-            ...currentSession,
-            messages: updatedMessages,
+          
+          // Create a completely new session object to ensure React detects the change
+          const updatedSession = {
+            connectionId: sessionId,
+            messages: [...currentSession.messages, displayMessage], // Properly append new message
             lastActivity: new Date(),
             unreadCount: currentSession.unreadCount + 1
-          });
-          console.log('After setChatSessions (message_received):', [...newSessions.keys()], newSessions);
+          };
+          
+          const newSessions = new Map(prev);
+          newSessions.set(sessionId, updatedSession);
+          
+          console.log('📨 Message added to session:', sessionId);
+          console.log('📊 Total messages in session:', updatedSession.messages.length);
+          console.log('📝 Latest message:', displayMessage.content.substring(0, 50) + '...');
+          
           return newSessions;
         });
       })
@@ -736,17 +745,21 @@ export default function ChatPage() {
         decrypted: true
       };
       
-      // Properly append to existing messages
-      const updatedMessages = [...currentSession.messages, messageToAdd];
+      // Create a completely new session object to ensure React detects the change
+      const updatedSession = {
+        connectionId: sessionKey,
+        messages: [...currentSession.messages, messageToAdd], // Properly append new message
+        lastActivity: new Date(),
+        unreadCount: currentSession.unreadCount
+      };
       
       const newSessions = new Map(prev);
-      newSessions.set(sessionKey, {
-        ...currentSession,
-        messages: updatedMessages,
-        lastActivity: new Date()
-      })
+      newSessions.set(sessionKey, updatedSession);
       
-      console.log('📤 Added message to session:', sessionKey, 'Total messages:', updatedMessages.length);
+      console.log('📤 Message sent and added to session:', sessionKey);
+      console.log('📊 Total messages in session:', updatedSession.messages.length);
+      console.log('📝 Sent message:', messageToAdd.content.substring(0, 50) + '...');
+      
       return newSessions
     })
     setNewMessage("")
@@ -1170,14 +1183,14 @@ export default function ChatPage() {
                             No messages yet. Start the conversation!
                         </div>
                         ) : (
-                        currentMessages.map((message) => {
+                        currentMessages.map((message, index) => {
                             const isSender = message.sender === (user as any).email;
                             const initials = message.sender
                               ? message.sender.split("@")[0].slice(0, 2).toUpperCase()
                               : "U";
                             return (
                               <div
-                                key={message.id}
+                                key={`${message.id}-${index}-${message.timestamp.getTime()}`}
                                 className={`flex ${isSender ? 'justify-end' : 'justify-start'}`}
                               >
                               <div className={`flex items-end gap-3 max-w-md lg:max-w-lg xl:max-w-xl ${isSender ? 'flex-row-reverse' : ''}`}>
