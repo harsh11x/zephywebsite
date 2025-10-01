@@ -55,7 +55,7 @@ export default function VoiceCallPage() {
       setConnectionStatus('connecting')
       
       const newSocket = io(
-        process.env.NEXT_PUBLIC_CHAT_SERVER_URL || 'https://chat.zephyrnsecurities.com',
+        process.env.NEXT_PUBLIC_CHAT_SERVER_URL || 'http://3.111.208.77:3001',
         {
           auth: {
             email: (user as any).email,

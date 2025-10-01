@@ -10,6 +10,7 @@ const server = http.createServer(app);
 app.use(cors({
   origin: [
     "https://www.zephyrnsecurities.com", // production
+    "https://zephyrnsecurities.com", // production without www
     "http://localhost:3000"              // local dev (optional)
   ],
   credentials: true
@@ -20,6 +21,7 @@ const io = socketIo(server, {
   cors: {
     origin: [
       "https://www.zephyrnsecurities.com",
+      "https://zephyrnsecurities.com",
       "http://localhost:3000"
     ],
     methods: ["GET", "POST"],
