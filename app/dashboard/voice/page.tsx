@@ -54,8 +54,23 @@ export default function VoiceCallPage() {
     if (user) {
       setConnectionStatus('connecting')
       
+      // Smart connection logic: use HTTPS for deployed site, HTTP for localhost
+      const getServerUrl = () => {
+        if (process.env.NEXT_PUBLIC_CHAT_SERVER_URL) {
+          return process.env.NEXT_PUBLIC_CHAT_SERVER_URL;
+        }
+        
+        // If running on localhost, use HTTP
+        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+          return 'http://localhost:3001';
+        }
+        
+        // For deployed site, try HTTPS first, then HTTP
+        return 'https://3.111.208.77:3001';
+      };
+
       const newSocket = io(
-        process.env.NEXT_PUBLIC_CHAT_SERVER_URL || 'http://3.111.208.77:3001' || 'https://chat.zephyrnsecurities.com',
+        getServerUrl(),
         {
           auth: {
             email: (user as any).email,
@@ -81,8 +96,45 @@ export default function VoiceCallPage() {
       })
 
       newSocket.on('connect_error', (error) => {
-        setConnectionStatus('error')
         console.log('❌ Connection error:', error)
+        
+        // If HTTPS failed and we're on deployed site, try HTTP fallback
+        if (typeof window !== 'undefined' && 
+            window.location.hostname !== 'localhost' && 
+            getServerUrl().startsWith('https://')) {
+          
+          console.log('🔄 Trying HTTP fallback...')
+          newSocket.disconnect()
+          
+          // Try HTTP fallback
+          const fallbackSocket = io('http://3.111.208.77:3001', {
+            auth: {
+              email: (user as any).email,
+              userId: (user as any).id
+            },
+            reconnection: true,
+            reconnectionAttempts: 3,
+            reconnectionDelay: 1000,
+            timeout: 10000
+          })
+          
+          fallbackSocket.on('connect', () => {
+            setConnectionStatus('connected')
+            console.log('✅ Connected to voice call server via HTTP fallback')
+            toast.success("Connected to voice call server")
+            setSocket(fallbackSocket)
+          })
+          
+          fallbackSocket.on('connect_error', (fallbackError) => {
+            setConnectionStatus('error')
+            console.log('❌ HTTP fallback also failed:', fallbackError)
+            toast.error(`Connection failed: ${fallbackError.message}`)
+          })
+          
+          return
+        }
+        
+        setConnectionStatus('error')
         toast.error(`Connection failed: ${error.message}`)
       })
 
