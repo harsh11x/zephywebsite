@@ -949,9 +949,20 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
           <CardTitle className="flex items-center gap-2">
             <Key className="h-5 w-5" />
             Shared Encryption Key
+            {sharedKey && sharedKey.length >= 16 && (
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Key Set
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription className="text-white/60">
             Enter or generate a shared key. Both users must use the same key for the call to work.
+            {sharedKey && sharedKey.length >= 16 && (
+              <span className="block text-green-400 text-sm mt-1">
+                ✅ Valid key set ({sharedKey.length} characters)
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row items-center gap-2">
@@ -963,7 +974,11 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
             className="flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
           <Button
-            onClick={() => setPendingKey(nanoid(32))}
+            onClick={() => {
+              const newKey = nanoid(32)
+              setPendingKey(newKey)
+              toast.info('Generated new key - click Apply Key to use it')
+            }}
             variant="outline"
             className="border-white/20 text-white/60 hover:text-white"
           >
@@ -971,12 +986,16 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
           </Button>
           <Button
             onClick={() => {
+              if (!pendingKey || pendingKey.length < 16) {
+                toast.error('Key must be at least 16 characters long')
+                return
+              }
               setSharedKey(pendingKey)
-              toast.success('Shared key applied!')
+              toast.success('Shared key applied! You can now make calls.')
             }}
             variant="default"
             className="bg-blue-600 text-white hover:bg-blue-700"
-            disabled={!pendingKey || pendingKey === sharedKey}
+            disabled={!pendingKey || pendingKey === sharedKey || pendingKey.length < 16}
           >
             Apply Key
           </Button>
@@ -987,7 +1006,14 @@ export default function VoiceCall({ userEmail, socket, onCallEnd, encryptionKey 
         <Alert className="bg-yellow-500/20 border-yellow-500/20 text-yellow-400">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Please set a shared encryption key before starting or answering a call. Both users must use the same key.
+            <div className="space-y-2">
+              <div>Please set a shared encryption key before starting or answering a call.</div>
+              <div className="text-sm">
+                • Key must be at least 16 characters long<br/>
+                • Both users must use the same key<br/>
+                • Click "Generate Key" to create a secure key, then "Apply Key"
+              </div>
+            </div>
           </AlertDescription>
         </Alert>
       )}
