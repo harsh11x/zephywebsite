@@ -221,6 +221,10 @@ export default function PaymentPage() {
 
             if (verifyResponse.ok) {
               console.log("Payment verified successfully")
+              // Save plan to localStorage
+              if (user?.uid) {
+                localStorage.setItem(`userPlan_${user.uid}`, selectedPlan || "free")
+              }
               setPaymentSuccess(true)
               setTimeout(() => {
                 router.push("/dashboard")

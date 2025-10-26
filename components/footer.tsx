@@ -35,7 +35,7 @@ export default function Footer() {
 
   return (
     <footer className="border-t-[0.5px] border-white/10 bg-black">
-      <div className="container py-8 sm:py-12 md:py-16 lg:py-20 px-3 sm:px-4 md:px-6 lg:px-8">
+      <div className="w-full py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 lg:px-8">
         {/* Currency Selector */}
         <div className="flex justify-center sm:justify-end mb-6 sm:mb-8">
           <CurrencySelector />

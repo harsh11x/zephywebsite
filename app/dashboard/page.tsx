@@ -4,14 +4,15 @@ import { useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Lock, FileText, MessageCircle, Phone } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Lock, FileText, MessageCircle, Phone, Shield, Zap, Crown, Building } from "lucide-react"
 import { MotionDiv, MotionH1, MotionP } from "@/components/motion"
 import Link from "next/link"
 import Header from "@/components/header"
 import GlassPanel from "@/components/GlassPanel"
 
 export default function Dashboard() {
-  const { user, loading } = useAuth()
+  const { user, loading, userPlan } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -106,6 +107,28 @@ export default function Dashboard() {
               Choose your encryption tool below
               </div>
             </MotionP>
+            
+            {/* Plan Display */}
+            <div className="mt-6 flex justify-center">
+              <Badge className={`px-4 py-2 text-sm font-medium ${
+                userPlan === "free" || userPlan === "starter" ? "bg-white/10 text-white border-white/20" :
+                userPlan === "standard" || userPlan === "professional" ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
+                userPlan === "enterprise" ? "bg-purple-500/20 text-purple-400 border-purple-500/30" :
+                userPlan === "global" ? "bg-gold-500/20 text-gold-400 border-gold-500/30" :
+                "bg-white/10 text-white border-white/20"
+              }`}>
+                {userPlan === "free" || userPlan === "starter" ? <Shield className="w-4 h-4 mr-2" /> :
+                 userPlan === "standard" || userPlan === "professional" ? <Zap className="w-4 h-4 mr-2" /> :
+                 userPlan === "enterprise" ? <Crown className="w-4 h-4 mr-2" /> :
+                 userPlan === "global" ? <Building className="w-4 h-4 mr-2" /> :
+                 <Shield className="w-4 h-4 mr-2" />}
+                {userPlan === "free" || userPlan === "starter" ? "Starter Plan" :
+                 userPlan === "standard" || userPlan === "professional" ? "Professional Plan" :
+                 userPlan === "enterprise" ? "Enterprise Plan" :
+                 userPlan === "global" ? "Global Plan" :
+                 "Starter Plan"}
+              </Badge>
+            </div>
           </div>
 
           {/* Encryption Tools */}

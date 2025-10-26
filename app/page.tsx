@@ -10,6 +10,7 @@ import { motion, useScroll, useTransform } from "framer-motion"
 import Link from "next/link"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
+import EncryptDemo from "@/components/EncryptDemo"
 
 export default function HomePage() {
   const { user } = useAuth()
@@ -60,6 +61,29 @@ export default function HomePage() {
     },
   ]
 
+  const explainer = [
+    {
+      step: "1",
+      title: "Generate a One-Time Key",
+      copy: "Your device creates a strong symmetric key (AES-256/GCM) locally. The key never leaves your device unless you explicitly share it.",
+    },
+    {
+      step: "2",
+      title: "Encrypt Message or File",
+      copy: "Content is encrypted client-side using the key. Only ciphertext is transmitted or stored.",
+    },
+    {
+      step: "3",
+      title: "Share via Email Only",
+      copy: "We send the ciphertext via email channels; the key is shared out-of-band or via your chosen secure key exchange.",
+    },
+    {
+      step: "4",
+      title: "Decrypt on Recipient Device",
+      copy: "Recipient pastes or retrieves the key, and their device decrypts locally. No server can read the content.",
+    },
+  ]
+
   const testimonials = [
     {
       name: "Sarah Chen",
@@ -107,8 +131,7 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="relative py-20 sm:py-28 md:py-32 lg:py-40">
-        <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl relative z-10">
-          {/* Remove the static heading and subtitle here */}
+        <div className="container mx-auto max-w-7xl relative z-10">
           <motion.div
             style={{ y, opacity }}
             initial={{ opacity: 0, y: 20 }}
@@ -183,7 +206,7 @@ export default function HomePage() {
 
       {/* Real-time Stats */}
       <section className="py-12 sm:py-16 md:py-20 border-y border-white/10">
-        <div className="container px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -273,6 +296,93 @@ export default function HomePage() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Encryption Flow Explainer */}
+      <section className="py-24 section-accent border-y border-white/10">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-5xl font-light tracking-tight text-white">End-to-End Encryption, Explained</h2>
+            <p className="text-xl text-white/60 mt-4 max-w-3xl mx-auto">Zero knowledge by design. Only the sender and recipient ever see plaintext.</p>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {explainer.map((e, i) => (
+              <motion.div
+                key={e.step}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <div className="elevated-card h-full p-6 outline-glow">
+                  <div className="text-white/50 text-sm">Step {e.step}</div>
+                  <h3 className="text-white text-xl mt-1">{e.title}</h3>
+                  <p className="text-white/70 mt-3">{e.copy}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Email-Only E2E Calling */}
+      <section className="py-24">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center"
+          >
+            <div>
+              <h2 className="text-5xl font-light tracking-tight text-white">Voice & Video Calls via Email Only</h2>
+              <p className="text-white/70 mt-4 text-lg">Set up fully encrypted voice/video calls where identities are emails—no SIM, no phone numbers. Keys are negotiated client-side and media is end-to-end encrypted.</p>
+              <div className="mt-8 flex flex-wrap gap-4">
+                <Link href="/demo">
+                  <button className="button-primary">See Encrypted Call Demo</button>
+                </Link>
+                <Link href="/docs/security">
+                  <button className="button-outline">Read Security Whitepaper</button>
+                </Link>
+              </div>
+            </div>
+            <div>
+              <div className="elevated-card outline-glow p-6">
+                <div className="grid grid-cols-3 gap-3 text-center text-white/80">
+                  <div className="p-4 bg-white/5 rounded-md">Email Identity</div>
+                  <div className="p-4 bg-white/5 rounded-md">Key Exchange</div>
+                  <div className="p-4 bg-white/5 rounded-md">SRTP E2EE</div>
+                  <div className="p-4 bg-white/5 rounded-md">Anonymous</div>
+                  <div className="p-4 bg-white/5 rounded-md">No SIM</div>
+                  <div className="p-4 bg-white/5 rounded-md">Global</div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Live Encryption Demo */}
+      <section className="py-24 border-t border-white/10">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-5xl font-light tracking-tight text-white text-center">Try It Live</h2>
+            <p className="text-white/60 text-center mt-3 mb-10">Encrypt and decrypt text in your browser. Keys never leave your device.</p>
+            <EncryptDemo />
+          </motion.div>
         </div>
       </section>
 

@@ -37,7 +37,7 @@ export default function Header() {
       transition={{ duration: 0.8, ease: "easeOut" }}
         style={{ width: '100%' }}
     >
-        <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl flex h-14 sm:h-16 items-center justify-between">
+        <div className="w-full px-4 sm:px-6 lg:px-8 flex h-14 sm:h-16 items-center justify-between">
         <div className="flex items-center">
           <Link href="/" className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 group">
               <div className="p-1.5 sm:p-2 bg-white/10 backdrop-blur-sm">
@@ -146,6 +146,12 @@ export default function Header() {
                     <Link href="/dashboard" className="cursor-pointer text-white">
                       <User className="h-4 w-4 mr-2" />
                       Command Center
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="cursor-pointer text-white">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>

@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Use font from next/font (set in layout). Remove manual body font override. */
 
 @layer utilities {
   .text-balance {
@@ -23,6 +21,96 @@ body {
     animation: fadeInUp 0.8s ease-out 0.3s forwards;
     opacity: 0;
   }
+
+  /* Terminal hacker theme utilities */
+  .text-terminal {
+    color: #00ff00;
+    text-shadow: 0 0 5px rgba(0,255,0,0.5);
+  }
+
+  .text-terminal-dim {
+    color: #00cc00;
+  }
+
+  .text-terminal-bright {
+    color: #00ff00;
+    text-shadow: 0 0 10px rgba(0,255,0,0.8);
+  }
+
+  .border-terminal {
+    border-color: rgba(0,255,0,0.4);
+    box-shadow: 0 0 5px rgba(0,255,0,0.2);
+  }
+
+  .bg-terminal {
+    background: rgba(0,255,0,0.05);
+    border: 1px solid rgba(0,255,0,0.2);
+  }
+
+  .glow-terminal {
+    box-shadow: 0 0 20px rgba(0,255,0,0.3);
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  .animate-pulse-green {
+    animation: pulseGreen 1.5s ease-in-out infinite;
+  }
+}
+
+/* Professional dark theme polish */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-black text-white antialiased selection:bg-green-500/20 selection:text-green-400;
+    background: #000000;
+  }
+}
+
+/* Terminal hacker theme cards */
+.elevated-card {
+  background: linear-gradient(180deg, rgba(0,255,0,0.05), rgba(0,255,0,0.02));
+  border: 1px solid rgba(0,255,0,0.3);
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0,255,0,0.1), inset 0 1px 0 rgba(0,255,0,0.2);
+}
+
+.section-accent {
+  background: radial-gradient(1200px 600px at 50% -20%, rgba(0, 255, 0, 0.03), transparent 60%),
+              radial-gradient(800px 400px at 110% 10%, rgba(0, 255, 0, 0.02), transparent 60%);
+}
+
+.outline-glow {
+  box-shadow: 0 0 0 1px rgba(0,255,0,0.4), 0 0 0 4px rgba(0,255,0,0.1), inset 0 1px 0 rgba(0,255,0,0.3);
+  border: 1px solid rgba(0,255,0,0.3);
+}
+
+.button-primary {
+  @apply inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors;
+  background: linear-gradient(90deg, #00ff00 0%, #00cc00 100%);
+  color: #000000;
+  border: 1px solid rgba(0,255,0,0.5);
+  box-shadow: 0 0 10px rgba(0,255,0,0.3);
+}
+.button-primary:hover { 
+  filter: brightness(1.2);
+  box-shadow: 0 0 20px rgba(0,255,0,0.5);
+}
+
+.button-outline {
+  @apply inline-flex items-center justify-center rounded-md px-6 py-3 text-sm font-medium transition-colors border;
+  border-color: rgba(0,255,0,0.4);
+  color: #00ff00;
+  background: rgba(0,255,0,0.05);
+}
+.button-outline:hover { 
+  background: rgba(0,255,0,0.1);
+  border-color: rgba(0,255,0,0.6);
+  box-shadow: 0 0 10px rgba(0,255,0,0.2);
 }
 
 @keyframes fadeIn {
@@ -54,6 +142,24 @@ body {
   }
   100% {
     background-position: 0% 50%;
+  }
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 5px rgba(0,255,0,0.5);
+  }
+  to {
+    text-shadow: 0 0 20px rgba(0,255,0,0.8), 0 0 30px rgba(0,255,0,0.6);
+  }
+}
+
+@keyframes pulseGreen {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }
 
@@ -103,7 +209,8 @@ input:focus, textarea:focus, select:focus {
 @layer components {
   .container {
     @apply mx-auto px-4 sm:px-6 lg:px-8;
-    max-width: 1280px;
+    max-width: 100%;
+    width: 100%;
   }
 }
 

@@ -16,6 +16,7 @@ import { auth, googleProvider } from "@/lib/firebase"
 type AuthContextType = {
   user: User | null
   loading: boolean
+  userPlan: string
   signInWithEmail: (email: string, password: string) => Promise<void>
   signUpWithEmail: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<UserCredential>
@@ -29,11 +30,19 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [userPlan, setUserPlan] = useState<string>("free")
 
   // Initialize auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user)
+      if (user) {
+        // Get user plan from localStorage or set default
+        const savedPlan = localStorage.getItem(`userPlan_${user.uid}`)
+        setUserPlan(savedPlan || "free")
+      } else {
+        setUserPlan("free")
+      }
       setLoading(false)
     })
 
@@ -81,11 +90,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-    user,
-    loading,
-    signInWithEmail,
-    signUpWithEmail,
-    signInWithGoogle,
+        user,
+        loading,
+        userPlan,
+        signInWithEmail,
+        signUpWithEmail,
+        signInWithGoogle,
         logout
       }}
     >
